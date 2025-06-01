@@ -1,4 +1,5 @@
 from dash import Dash, html, dash_table,dcc, callback, Output, Input, State
+import dash_bootstrap_components as dbc
 import desc
 from desc.grid import LinearGrid
 import plotly.express as px
@@ -13,14 +14,16 @@ import pandas as pd
 
 ## Main title
 def comp_title():
-    return html.Div(
-        className = 'row', 
-        children='DESC Visualization Dashboard',
-        style={
-            'color': 'black',
-            'fontSize': 30
-        }
+    div = html.Div(
+            dbc.Row(dbc.Col('DESC Visualization Dashboard', 
+                            width=12, 
+                            className='text-center',
+                            style ={
+                                'fontSize': 30
+                            }))
     )
+    return div
+
 
 ## dropdown with list of equilibria
 def comp_eq_dropdown(params):
@@ -32,27 +35,39 @@ def comp_eq_dropdown(params):
             id='dropdown_eqlist'
             )
 
-## div element for 1D profiles
+## div element for 1D profile figures
 def comp_figure_1Dprofiles():
-    fig_display = html.Div(className='row', 
-                           children=[dcc.Graph(figure={}, id='fig_1Dprofiles')],
-                            style={'display': 'flex', 
-                                   'margin': 'auto', 
-                                   'height': '80vh', 
-                                   'width': '70%'}
+    fig_display = html.Div(children=[dcc.Graph(figure={}, id='fig_1Dprofiles')],
+                            style={}
                             )
     return fig_display
+
+## div element for 1D profile left panel
+def comp_panel_1Dprofiles(params):
+     title = html.Div(
+            children = '1D Profile Options',
+            style = {
+                'color': 'black',
+                'fontSize': 20
+            }
+        )
+     div = html.Div(
+         children=[title, html.Hr(), comp_buttons_1Dprofiles(params)],
+         style = {
+            'border': 'solid gray'
+         })
+     return div
 
 
 ## radio buttons with options for different 1D profiles
 def comp_buttons_1Dprofiles(params):
     buttons = dcc.RadioItems(options=params.attrs_profiles,
                             value=params.attrs_profiles[0],
-                            inline=True,
                             id='buttons_1Dprofiles'
                             )
-    buttons_display = html.Div(className='row',
-                               children=[buttons])
+    buttons_display = html.Div(children=[buttons],
+                               style = {'display': 'flex'}
+                               )
     return buttons_display
                         
 

@@ -1,4 +1,5 @@
 from dash import Dash, html, dash_table,dcc, callback, Output, Input, State
+import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
@@ -18,15 +19,18 @@ ac.initialize(params)
 #################################################
 # App layout
 #################################################
-app = Dash()
+app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.layout = [
     ac.comp_title(),
     ac.comp_eq_dropdown(params),
     html.Hr(),
-    ac.comp_buttons_1Dprofiles(params),
-    ac.comp_figure_1Dprofiles(),
+    html.Div([
+        dbc.Row([
+            dbc.Col(ac.comp_panel_1Dprofiles(params), width=5),
+            dbc.Col(ac.comp_figure_1Dprofiles(), width = 6)
+        ])
+    ])
 ]
-
 #################################################
 # Callbacks
 #################################################
