@@ -1,0 +1,8 @@
+
+-- All the formatting for table in tab 1
+
+-- Fix formatting on the 1d graphs in tab 2 (font size, rotate y label)
+-- Decide how to format the radio buttons, since LaTeX rendering with mathjax is not working 
+
+-- Add to the lists of plottable things in params.py, and test more equilibria. Do things slow down?
+

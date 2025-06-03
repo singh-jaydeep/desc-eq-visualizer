@@ -24,23 +24,45 @@ app.layout = [
     ac.comp_title(),
     ac.comp_eq_dropdown(params),
     html.Hr(),
-    html.Div([
-        dbc.Row([
-            dbc.Col(ac.comp_panel_1Dprofiles(params), width=5),
-            dbc.Col(ac.comp_figure_1Dprofiles(), width = 6)
-        ])
-    ])
+    ac.comp_tabs(params)
 ]
+
 #################################################
 # Callbacks
 #################################################
 @callback(
     Output('fig_1Dprofiles','figure'),
     Input('buttons_1Dprofiles', 'value'),
-    State('dropdown_eqlist', 'value')
+    Input('main_dropdown', 'value')
 ) 
 def update_fig_1Dprofiles(quantity, eq_index):
     return ac.update_figure_1Dprofiles(int(eq_index),quantity,params)
+
+@callback(
+    Output('summary-table', 'data'),
+    Input('main_dropdown', 'value')
+)
+def update_table_states(eq_index):
+    return ac.update_table_stats(int(eq_index),params)
+
+
+
+@callback(
+    Output('slider_fluxsurf', 'max'),
+    Output('slider_fluxsurf', 'marks'),
+    Input('main_dropdown', 'value')
+)
+def update_slider_fluxsurf(eq_index):
+    return ac.update_slider_fluxsurf(int(eq_index),params)
+
+@callback(
+    Output('figure_fluxsurf', 'figure'),
+    Input('main_dropdown', 'value'),
+    Input('slider_fluxsurf', 'value')
+)
+def update_figure_fluxsurf(eq_index, slider_val):
+    return ac.update_figure_fluxsurf(int(eq_index),slider_val, params)
+    
 
 
 #################################################

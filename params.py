@@ -6,24 +6,32 @@ from desc.grid import LinearGrid
 class viz_params:
     attrs_scalars = ['<beta>_vol','<|grad(p)|>_vol']
     attrs_profiles= ['iota','<|B|>']
-    attrs = [attrs_scalars, attrs_profiles]
+    attrs_2d = ['B^rho', 'J^rho']
+    attrs = [attrs_scalars, attrs_profiles, attrs_2d]
+    attrs_label_dict: dict = field(default_factory = dict)
 
-    #### Grids used for computation
+    #### Quantities used for 1D profiles
     grid_profiles = LinearGrid(20,0,0,1)
+
+    #### Quantities used for flux surfaces
+    fx_num_rho = 8
+    fx_num_theta = 8
+    fx_num_phi = 12
+
+
 
     #### Paths to the folders which contain the base DESC output and 
     #### preprocessed files, respectively
     base_desc_path: str = "equilibria/base_desc_outputs"
     pp_desc_path: str = "equilibria/preprocessed_desc_outputs"
 
-    #### Listing of the files contained in the above folders
+    #### Listing of the files contained in the above folder
     base_desc_filelist: list = field(default_factory = list)
-    pp_desc_filelist: list = field(default_factory = list)
 
     #### Lists of Equilibria objects and names for referring to them
-    eq_loaded: list = field(default_factory = list)
-    pp_eq_loaded: list = field(default_factory = list)
-    eq_names_list: list = field(default_factory = list)
+    eq_loaded: list = field(default_factory = list) ## list of Equilbrium objects
+    pp_eq_loaded: list = field(default_factory = list) ## list of dictionaries, one per Equilibrium object
+    eq_names_list: list = field(default_factory = list) ## for displaying on the dropdown
 
 
     
