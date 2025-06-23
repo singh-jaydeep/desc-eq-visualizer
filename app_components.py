@@ -199,24 +199,59 @@ def update_figure_1Dprofiles(eq_index,quantity,params):
 def comp_tab3(params):
     div = html.Div([
             dbc.Row([
-                dbc.Col([
-                    figure_fluxsurf(),
-                    slider_fluxsurf()
-                ])
+                leftpanel_2D(params),
+                rightpanel_2D(params)
             ], justify='center'
             )
         ])
     return div
 
-def panel_2D(params):
-    pass
+def leftpanel_2D(params):
+    col = dbc.Col([
+                    figure_fluxsurf(),
+                    slider_fluxsurf()
+                ], width=4
+                )
+    return col
+
+def rightpanel_2D(params):
+    title = html.Div(
+            children = 'Select profile type',
+            style = {
+                'color': blue,
+                'fontSize': 20,
+                'text-align': 'center'
+            },
+            className = 'mt-3 mb-3'
+        )
+    column = dbc.Col([
+              figure_2D(),
+              slider_2Dprofiles(),
+              title,
+              html.Hr(),
+              dbc.RadioItems(
+                    options={'const_rho': 'Constant rho surfaces', 'const_phi': 'Constant phi surfaces'},
+                    value='const_rho',
+                    id='buttons_2D_whichview',
+                    className = 'mb-3'
+                ),
+              html.Hr(),
+              dbc.RadioItems(
+                    options={i: params.attrs_label_dict[i] for i in params.attrs_2d},
+                    value=params.attrs_2d[0],
+                    id='buttons_2Dprofiles_list',
+                    className = 'mb-3'
+                ),
+        
+            ], className='mb-3', width=4
+            )
+    return column
 
 def figure_fluxsurf():
     fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_fluxsurf', mathjax=True)],
                             style={}
                             )
     column = dbc.Col(fig_display, 
-                    width = 6,
                     className = 'mb-3')
     return column
 
@@ -229,7 +264,7 @@ def slider_fluxsurf():
     col = dbc.Row([
             dbc.Col([
                 slider
-            ], width=5, className = 'mb-3 align-items-center')
+            ], className = 'mb-3 align-items-center')
     ])
     return col
 
@@ -240,11 +275,40 @@ def update_slider_fluxsurf(eq_index,params):
     return max, marks
 
 
-def figureA_2D():
-    pass
+def figure_2D():
+    fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_2d', mathjax=True)],
+                            style={}
+                            )
+    column = dbc.Col(fig_display, 
+                    className = 'mb-3')
+    return column
 
-def update_figureA_2Dprofiles(eq_index,quantity,params):
-    pass
+def update_figure_2Dprofiles(eq_index,view, quantity, slider_val,params):
+    if view == 'const_rho':
+        return params.pp_eq_loaded[eq_index][quantity+'2d'+'const_rho'][slider_val]
+    else:
+        return params.pp_eq_loaded[eq_index][quantity+'2d'+'const_phi'][slider_val]
+
+def slider_2Dprofiles():
+    slider=dcc.Slider(min=0, max = 0, step = None, marks={}, value=0, id='slider_2d')
+    col = dbc.Row([
+            dbc.Col([
+                slider
+            ], className = 'mb-3 align-items-center')
+    ])
+    return col
+
+def update_slider_2Dprofiles(eq_index,view, params):
+    eq = params.eq_loaded[eq_index]
+    if view == 'const_rho':
+        max = 1
+        marks = {i: f'{i}/{params.fx_num_rho}' for i in range(0,params.fx_num_rho)}
+    else:
+        max = round(2*3.14159/eq.NFP,2)
+        marks = {i: f'{i}/{params.fx_num_phi} * 2 pi/{eq.NFP}' for i in range(0,params.fx_num_phi)}
+    return max, marks
+
+
 
 
 #################################################
@@ -277,12 +341,15 @@ def build_data_dict(curr_eq, params):
     for i in range(0, len(params.attrs_profiles)):
         dict[params.attrs_profiles[i]] = data_array_profiles[i]
 
-    ######### Loading flux surface figures, reconverting to plotly
+    ######### Loading flux surface figures and 2dplots, reconverting to plotly
     path_json = os.path.join(params.pp_desc_path, 'pp_'+curr_eq.removesuffix('.h5')+'.json')
     with gzip.open(path_json, 'rt') as g:
         figure_list = json.load(g)
-    dict['flux_surfaces'] = [plotly.io.from_json(fig) for fig in figure_list]
-
+    dict['flux_surfaces'] = [plotly.io.from_json(fig) for fig in figure_list[0]]
+    for i in range(0,len(params.attrs_2d)):
+        q = params.attrs_2d[i]
+        dict[q+'2d'+'const_rho'] = [plotly.io.from_json(fig) for fig in figure_list[i+1]]
+        dict[q+'2d'+'const_phi'] = [plotly.io.from_json(fig) for fig in figure_list[i+1+len(params.attrs_2d)]]
     return dict
 
 
@@ -294,4 +361,7 @@ def build_label_dict(params):
         params.attrs_label_dict[quantity] = 'r$'+data_index[p][quantity]["label"]+'$'
     for i in range(0, len(params.attrs_profiles)):
         quantity = params.attrs_profiles[i]
+        params.attrs_label_dict[quantity] = 'r$'+data_index[p][quantity]["label"]+'$'
+    for i in range(0, len(params.attrs_2d)):
+        quantity = params.attrs_2d[i]
         params.attrs_label_dict[quantity] = 'r$'+data_index[p][quantity]["label"]+'$'

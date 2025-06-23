@@ -6,3 +6,7 @@
 
 -- Add to the lists of plottable things in params.py, and test more equilibria. Do things slow down?
 
+-- The slider endpoints are screwed up. Related to how 'value' is interpreted
+
+-- Check which variables in the 2d plots correspond to theta and phi, and label appropriately
+

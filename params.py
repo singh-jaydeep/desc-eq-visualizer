@@ -7,7 +7,8 @@ class viz_params:
     attrs_scalars = ['<beta>_vol','<|grad(p)|>_vol']
     attrs_profiles= ['iota','<|B|>']
     attrs_2d = ['B^rho', 'J^rho']
-    attrs = [attrs_scalars, attrs_profiles, attrs_2d]
+    attrs_3d = []
+    attrs = [attrs_scalars, attrs_profiles, attrs_2d, attrs_3d]
     attrs_label_dict: dict = field(default_factory = dict)
 
     #### Quantities used for 1D profiles
@@ -17,6 +18,21 @@ class viz_params:
     fx_num_rho = 8
     fx_num_theta = 8
     fx_num_phi = 12
+
+    #### Quantities used for 2D plots
+    
+    grid_const_rho_args = {
+       # "NFP": eq_tok.NFP,
+        "sym": False,
+        "axis": False,
+        "endpoint": True,
+        "M": 33, 
+        "N": 33,
+        #"rho": np.array([1.0])
+    }
+    surf2d_num_rho = 6
+    surf2d_num_phi = 8
+
 
 
 

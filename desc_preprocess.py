@@ -5,10 +5,13 @@ import h5py
 from params import viz_params
 from desc.grid import LinearGrid
 import matplotlib.pyplot as plt
-from desc.plotting import plot_surfaces
+from desc.plotting import plot_surfaces, plot_2d, plot_section
+import plotly.graph_objects as go
 import plotly
+import numpy as np
 
-from plotly_plotting import plotly_plot_surface 
+from plotly_plotting import plotly_plot_fluxsurf, plotly_plot_2dsurf_const_rho, plotly_plot_2dsurf_const_phi
+from desc.equilibrium import Equilibrium
 
 
 
@@ -25,7 +28,10 @@ def precompute():
         for i in range(0, len(params.eq_loaded)):
             data_array = compute_quantities(i,params)
             write_hdf5(i,params,data_array)
-            figure_list = compute_fluxsurfaces(i, params)
+            figure_list_fluxsurf = compute_fluxsurfaces(i, params)
+            figure_list_2dplots_const_rho = compute_2dsurfaces_const_rho(i,params)
+            figure_list_2dplots_const_phi = compute_2dsurfaces_const_phi(i,params)
+            figure_list = figure_list_fluxsurf + figure_list_2dplots_const_rho + figure_list_2dplots_const_phi
             write_figures_json(i,params,figure_list)
 
 
@@ -70,9 +76,58 @@ def compute_fluxsurfaces(eq_index, params):
         ydata1 = data['rho_Z_coords'][:,:,i]
         xdata2 = data['vartheta_R_coords'][:,:,i].T
         ydata2 = data['vartheta_Z_coords'][:,:,i].T
-        fig_list_json.append(plotly.io.to_json(plotly_plot_surface(xdata1, ydata1, xdata2, ydata2, params)))
+        fig_list_json.append(plotly.io.to_json(plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, params)))
 
-    return fig_list_json  
+    return [fig_list_json]  
+
+def compute_2dsurfaces_const_rho(eq_index,params): ## computes for a fixed equilibrium, across all 2d attributes
+    eq = params.eq_loaded[eq_index]
+    params.grid_const_rho_args['NFP'] = eq.NFP
+    rho_grid = np.linspace(0,1,params.surf2d_num_rho)
+    fig_list_json_A = []
+    for q in params.attrs_2d:
+        fig_list_json_B = []
+        for i in range(0,params.surf2d_num_rho):
+            params.grid_const_rho_args['rho'] = np.array([i])
+            grid = LinearGrid(**params.grid_const_rho_args)
+
+            try:
+                fig,_,data = plot_2d(eq, q, grid = grid, return_data=True)
+                data = data[q]
+                plt.close(fig)
+            except:
+                data=None
+
+            fig_list_json_B.append(plotly.io.to_json(plotly_plot_2dsurf_const_rho(data,params)))
+        fig_list_json_A.append(fig_list_json_B)
+    return fig_list_json_A
+
+
+def compute_2dsurfaces_const_phi(eq_index,params):
+    eq = params.eq_loaded[eq_index]
+
+    fig_list_json_A = []
+    for q in params.attrs_2d:
+        fig_list_json_B = []
+
+        try:
+            fig,_,data = plot_section(eq,q, phi = params.surf2d_num_phi, return_data=True)
+            plt.close(fig)
+            for i in range(0,params.surf2d_num_phi):
+                xdata = data['R'][:,:,i]
+                ydata = data['Z'][:,:,i]
+                zdata = data[q][:,:,i]
+                fig_list_json_B.append(plotly.io.to_json(plotly_plot_2dsurf_const_phi(xdata,ydata,zdata,params)))
+        except:
+            for i in range(0,params.surf2d_num_phi):
+                fig_empty = go.Figure()
+                fig_list_json_B.append(plotly.io.to_json(fig_empty))
+
+        fig_list_json_A.append(fig_list_json_B)
+
+    return fig_list_json_A
+
+    
 
 
 def write_figures_json(eq_index, params, figure_list):
