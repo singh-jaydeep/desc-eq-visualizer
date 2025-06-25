@@ -13,6 +13,8 @@ import h5py
 import pandas as pd
 import json
 import gzip
+import numpy as np
+from fractions import Fraction
 
 #################################################
 # Global style things
@@ -79,7 +81,7 @@ def comp_tabs(params):
                     dbc.Tab(
                         label = '3D Views',
                         tab_id = 'tab4',
-                        children=[]
+                        children=[comp_tab4(params)]
                     ),
                 ], id="tabs", active_tab="tab2")
             ], width=12)
@@ -137,58 +139,98 @@ def to_dataframe(eq_index,params):
 def comp_tab2(params):
     div = html.Div([
             dbc.Row([
-                panel_1Dprofiles(params),
-                figure_1Dprofiles()
-            ], justify='center'
-            )
+                panel_1dprofiles_left(params),
+                panel_1dprofiles_right(params),
+            ], justify='center')
         ])
     return div
 
-## div element for 1D profile selection (left panel)
-def panel_1Dprofiles(params):
-     title = html.Div(
-            children = 'Select profile type',
-            style = {
-                'color': blue,
-                'fontSize': 20,
-                'text-align': 'center'
-            },
-            className = 'mt-3 mb-3'
-        )
-     column = dbc.Col([
-              title,
-              html.Hr(),
-              dbc.RadioItems(
-                    options={i: params.attrs_label_dict[i] for i in params.attrs_profiles},
-                    value=params.attrs_profiles[0],
-                    id='buttons_1Dprofiles',
-                    className = 'mb-3'
-                ),
-        
-            ], className='mb-3', width=4
-            )
-     return column
 
-## div element for 1D profile figures (right panel)
-def figure_1Dprofiles():
-    fig_display = html.Div(children=[dcc.Graph(figure={}, id='fig_1Dprofiles', mathjax=True)],
-                            style={}
-                            )
-    column = dbc.Col(fig_display, 
-                    width = 6,
-                    className = 'mb-3 align-items-center')
-    return column
+
+def panel_1dprofiles_left(params):
+    dropdown = dbc.Row([
+                dbc.Col([
+                    dcc.Dropdown(
+                        options={i: i for i in params.attrs_profiles},
+                        id='dropdown_1dprofiles_left',
+                        value=params.attrs_profiles[0],
+                        style={'margin-bottom':'20px',
+                               'margin-top':'20px'}
+                    )], className='justify-content-center', width=3)
+            ], justify='center')
+    column_left = dbc.Col([
+                   dropdown,
+                   figure_1dprofiles_left()
+               ], width=5) 
+
+    return column_left
+
+def panel_1dprofiles_right(params):
+    dropdown = dbc.Row([
+                dbc.Col([
+                        dcc.Dropdown(
+                            options={i: i for i in params.attrs_profiles},
+                            id='dropdown_1dprofiles_right',
+                            value=params.attrs_profiles[1],
+                            style={'margin-bottom':'20px',
+                                   'margin-top':'20px'}
+                        )
+                    ], className='justify-content-center', width=3)
+            ], justify='center')
+    column_right = dbc.Col([
+                   dropdown,
+                   figure_1dprofiles_right()
+               ], width=5) 
+    return column_right
+
+def figure_1dprofiles_left():
+    fig_row_left = dbc.Row([
+                dbc.Col(dcc.Graph(figure={}, id='fig_1dprofiles_left', mathjax=True), 
+                            className = 'mb-3 align-items-center')
+            ])
+    return fig_row_left
+
+def figure_1dprofiles_right():
+    fig_row_right = dbc.Row([
+                dbc.Col(dcc.Graph(figure={}, id='fig_1dprofiles_right', mathjax=True), 
+                            className = 'mb-3 align-items-center')
+            ])
+    return fig_row_right
+
+
 
 ## Tab 2 Update, triggered by callback 
-def update_figure_1Dprofiles(eq_index,quantity,params):
+def update_figure_1dprofiles(eq_index,quantity,params):
     data = params.pp_eq_loaded[eq_index][quantity]
     rho_grid = params.grid_profiles.nodes[:,0]
     df = pd.DataFrame(dict(
         x=rho_grid,
         y=data
     ))
-    labels = {'x': r'$\rho$', 'y': params.attrs_label_dict[quantity]}
+    labels = {'x': r'$\rho$', 'y': ''}
     fig = px.line(df, x='x', y='y', labels=labels)
+    title = fr'$\text{{Radial profile of }} {params.attrs_label_dict[quantity]}$'
+    fig.update_layout(
+        annotations=[
+            {
+                'text': fr'${params.attrs_label_dict[quantity]}$',
+                'xref':"paper",
+                'yref':"paper",
+                'x': -.1,
+                'y': .5,
+                'showarrow': False,
+                'textangle': 0,
+                'xanchor':"left",
+                'yanchor':"bottom",
+                'font': dict(size=14)
+            }
+        ],
+        title={
+            'text': title,
+            'x': 0.5,
+            'y': 0.93,
+        },
+    )
     return fig
 
 
@@ -199,51 +241,48 @@ def update_figure_1Dprofiles(eq_index,quantity,params):
 def comp_tab3(params):
     div = html.Div([
             dbc.Row([
-                leftpanel_2D(params),
-                rightpanel_2D(params)
+                panel_2d_left(params),
+                panel_2d_right(params)
             ], justify='center'
             )
         ])
     return div
 
-def leftpanel_2D(params):
+def panel_2d_left(params):
     col = dbc.Col([
-                    figure_fluxsurf(),
+                    html.Div([figure_fluxsurf()], style={'margin-top':'60px'}),
                     slider_fluxsurf()
-                ], width=4
+                ], width=5
                 )
     return col
 
-def rightpanel_2D(params):
-    title = html.Div(
-            children = 'Select profile type',
-            style = {
-                'color': blue,
-                'fontSize': 20,
-                'text-align': 'center'
-            },
-            className = 'mt-3 mb-3'
-        )
+def panel_2d_right(params):
+    selection_row1 = dbc.Col([html.Div(children=[
+                                html.Div(children='View: '),
+                                dcc.Dropdown(
+                                    options={'const_rho': 'Fixed flux surface', 
+                                            'const_phi': 'Fixed toroidal angle'},
+                                    id='dropdown_2d_whichview',
+                                    value='const_rho',
+                                )
+                            ])
+                    ], width=5)
+    selection_row2 = dbc.Col([html.Div(children=[
+                                    html.Div(children='Quantity: '),
+                                    dbc.Col([
+                                        dcc.Dropdown(
+                                            options={i: i for i in params.attrs_2d},
+                                            id='dropdown_2dprofiles_list',
+                                            value=params.attrs_2d[0]
+                                        )
+                                    ])
+                                ])
+                    ], width=5)
     column = dbc.Col([
-              figure_2D(),
-              slider_2Dprofiles(),
-              title,
-              html.Hr(),
-              dbc.RadioItems(
-                    options={'const_rho': 'Constant rho surfaces', 'const_phi': 'Constant phi surfaces'},
-                    value='const_rho',
-                    id='buttons_2D_whichview',
-                    className = 'mb-3'
-                ),
-              html.Hr(),
-              dbc.RadioItems(
-                    options={i: params.attrs_label_dict[i] for i in params.attrs_2d},
-                    value=params.attrs_2d[0],
-                    id='buttons_2Dprofiles_list',
-                    className = 'mb-3'
-                ),
-        
-            ], className='mb-3', width=4
+                dbc.Row([selection_row1, selection_row2], justify='center'),
+                figure_2d(),
+                slider_2dprofiles()
+            ], className='mb-3', width=5
             )
     return column
 
@@ -264,18 +303,18 @@ def slider_fluxsurf():
     col = dbc.Row([
             dbc.Col([
                 slider
-            ], className = 'mb-3 align-items-center')
-    ])
+            ], className = 'mb-3 align-items-center', width=8)
+    ], justify='center')
     return col
 
 def update_slider_fluxsurf(eq_index,params):
     eq = params.eq_loaded[eq_index]
-    max = round(2*3.14159/eq.NFP,2)
-    marks = {i: f'{i}/{params.fx_num_phi} * 2 pi/{eq.NFP}' for i in range(0,params.fx_num_phi)}
+    max = params.fx_num_phi-1
+    marks={i:'' for i in range(0,params.fx_num_phi)}
     return max, marks
 
 
-def figure_2D():
+def figure_2d():
     fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_2d', mathjax=True)],
                             style={}
                             )
@@ -283,33 +322,126 @@ def figure_2D():
                     className = 'mb-3')
     return column
 
-def update_figure_2Dprofiles(eq_index,view, quantity, slider_val,params):
+def update_figure_2dprofiles(eq_index,view, quantity, slider_val,params):
     if view == 'const_rho':
         return params.pp_eq_loaded[eq_index][quantity+'2d'+'const_rho'][slider_val]
     else:
         return params.pp_eq_loaded[eq_index][quantity+'2d'+'const_phi'][slider_val]
 
-def slider_2Dprofiles():
+def slider_2dprofiles():
     slider=dcc.Slider(min=0, max = 0, step = None, marks={}, value=0, id='slider_2d')
     col = dbc.Row([
             dbc.Col([
                 slider
-            ], className = 'mb-3 align-items-center')
-    ])
+            ], className = 'mb-3 align-items-center', width=8)
+    ], justify='center')
     return col
 
-def update_slider_2Dprofiles(eq_index,view, params):
+def update_slider_2dprofiles(eq_index,view, params):
     eq = params.eq_loaded[eq_index]
     if view == 'const_rho':
-        max = 1
-        marks = {i: f'{i}/{params.fx_num_rho}' for i in range(0,params.fx_num_rho)}
+        max = params.surf2d_num_rho
+        marks = {i: '' for i in range(0,params.surf2d_num_rho+1)}
     else:
-        max = round(2*3.14159/eq.NFP,2)
-        marks = {i: f'{i}/{params.fx_num_phi} * 2 pi/{eq.NFP}' for i in range(0,params.fx_num_phi)}
+        max = params.surf2d_num_phi-1
+        marks = {i: '' for i in range(0,params.surf2d_num_phi)}
     return max, marks
 
 
+#################################################
+# Tab 4
+#################################################
 
+def comp_tab4(params):
+    div = html.Div([
+            dbc.Row([
+                panel_3d_left(params),
+                panel_3d_right(params),
+            ], justify='center')
+        ])
+    return div
+
+
+
+def panel_3d_left(params):
+    dropdown = dbc.Row([
+                dbc.Col([
+                    dcc.Dropdown(
+                        options={i: i for i in params.attrs_3d},
+                        id='dropdown_3d_left',
+                        value=params.attrs_3d[0],
+                        style={'margin-top':'20px'}
+                    )], className='justify-content-center', width=6)
+            ], justify='center')
+    column_left = dbc.Col([
+                   dropdown,
+                   figure_3d_left(),
+                   slider_3d_left(params)
+               ], width=6) 
+
+    return column_left
+
+def panel_3d_right(params):
+    dropdown = dbc.Row([
+                dbc.Col([
+                        dcc.Dropdown(
+                            options={i: i for i in params.attrs_3d},
+                            id='dropdown_3d_right',
+                            value=params.attrs_3d[1],
+                            style={'margin-top':'20px'}
+                        )
+                    ], className='justify-content-center', width=6)
+            ], justify='center')
+    column_right = dbc.Col([
+                   dropdown,
+                   figure_3d_right(),
+                   slider_3d_right(params),
+               ], width=6) 
+    return column_right
+
+def figure_3d_left():
+    fig_row_left = dbc.Row([
+                dbc.Col(dcc.Graph(figure={}, id='fig_3d_left', mathjax=True), 
+                            className = 'mb-3 align-items-center')
+            ])
+    return fig_row_left
+
+def figure_3d_right():
+    fig_row_right = dbc.Row([
+                dbc.Col(dcc.Graph(figure={}, id='fig_3d_right', mathjax=True), 
+                            className = 'mb-3 align-items-center')
+            ])
+    return fig_row_right
+
+
+def slider_3d_left(params):
+    max = params.surf3d_num_rho
+    marks = {i: '' for i in range(0,params.surf3d_num_rho+1)}
+    slider=dcc.Slider(min=0, max = max, step = None, marks=marks, value=0, id='slider_3d_left')
+    col = dbc.Row([
+            dbc.Col([
+                slider
+            ], className = 'mb-3 align-items-center', width=8)
+    ], justify='center')
+    return col
+
+def slider_3d_right(params):
+    max = params.surf3d_num_rho
+    marks = {i: '' for i in range(0,params.surf3d_num_rho+1)}
+    slider=dcc.Slider(min=0, max = max, step = None, marks=marks, value=0, id='slider_3d_right')
+    col = dbc.Row([
+            dbc.Col([
+                slider
+            ], className = 'mb-3 align-items-center', width=8)
+    ], justify='center')
+    return col
+
+def update_figure_3dprofiles(eq_index, quantity, slider_val, params):
+    fig = params.pp_eq_loaded[eq_index][quantity+'3d'][slider_val]
+    fig.update_layout(
+        scene_camera=dict(eye=dict(x=3., y=3., z=3.))
+    )
+    return fig
 
 #################################################
 # Initialization code
@@ -320,48 +452,38 @@ def initialize(params):
         desc_path = os.path.join(params.base_desc_path, item)
         params.eq_names_list.append(item.removesuffix('.h5'))
         params.eq_loaded.append(desc.io.load(desc_path)) ## loading the equilibrium via DESC
-        build_label_dict(params)
+        #build_label_dict(params)
         params.pp_eq_loaded.append(build_data_dict(item, params)) ## loading the precomputed data
 
 
 ## unpacks the preprocessed files
 def build_data_dict(curr_eq, params): 
-    path_h5 = os.path.join(params.pp_desc_path, 'pp_'+curr_eq)
-    f = h5py.File(path_h5, 'r')
-
     dict = {}
-
-    ######### Loading scalar computed values 
-    data_array_scalars = f['data_array_scalars'][()]
-    for i in range(0, len(params.attrs_scalars)):
-        dict[params.attrs_scalars[i]] = data_array_scalars[i]
-
-    ######### Loading 1D profiles
-    data_array_profiles = f['data_array_profiles'][()]
-    for i in range(0, len(params.attrs_profiles)):
-        dict[params.attrs_profiles[i]] = data_array_profiles[i]
-
-    ######### Loading flux surface figures and 2dplots, reconverting to plotly
     path_json = os.path.join(params.pp_desc_path, 'pp_'+curr_eq.removesuffix('.h5')+'.json')
     with gzip.open(path_json, 'rt') as g:
-        figure_list = json.load(g)
+        data_collected = json.load(g)
+    
+    params.attrs_label_dict = data_collected[0]
+    data_array = data_collected[1]
+    figure_list = data_collected[2]
+
+    ######## Loading summary statistics
+    for i in range(0, len(params.attrs_scalars)):
+        dict[params.attrs_scalars[i]] = data_array[0][i]
+
+    ######## Loading 1D profiles
+    for i in range(0, len(params.attrs_profiles)):
+        dict[params.attrs_profiles[i]] = data_array[1][i]
+
+    ######### Loading flux surface figures, 2dplots, and 3d plots, reconverting to plotly
     dict['flux_surfaces'] = [plotly.io.from_json(fig) for fig in figure_list[0]]
     for i in range(0,len(params.attrs_2d)):
         q = params.attrs_2d[i]
         dict[q+'2d'+'const_rho'] = [plotly.io.from_json(fig) for fig in figure_list[i+1]]
         dict[q+'2d'+'const_phi'] = [plotly.io.from_json(fig) for fig in figure_list[i+1+len(params.attrs_2d)]]
+    for i in range(0, len(params.attrs_3d)):
+        q = params.attrs_3d[i]
+        dict[q+'3d'] = [plotly.io.from_json(fig) for fig in figure_list[i + 1 + len(params.attrs_2d) + len(params.attrs_2d)]]
+
     return dict
 
-
-## loads labels for all plotted quantities
-def build_label_dict(params):
-    p = _parse_parameterization(params.eq_loaded[0])
-    for i in range(0, len(params.attrs_scalars)):
-        quantity = params.attrs_scalars[i]
-        params.attrs_label_dict[quantity] = 'r$'+data_index[p][quantity]["label"]+'$'
-    for i in range(0, len(params.attrs_profiles)):
-        quantity = params.attrs_profiles[i]
-        params.attrs_label_dict[quantity] = 'r$'+data_index[p][quantity]["label"]+'$'
-    for i in range(0, len(params.attrs_2d)):
-        quantity = params.attrs_2d[i]
-        params.attrs_label_dict[quantity] = 'r$'+data_index[p][quantity]["label"]+'$'

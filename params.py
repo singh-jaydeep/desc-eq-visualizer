@@ -6,9 +6,9 @@ from desc.grid import LinearGrid
 class viz_params:
     attrs_scalars = ['<beta>_vol','<|grad(p)|>_vol']
     attrs_profiles= ['iota','<|B|>']
-    attrs_2d = ['B^rho', 'J^rho']
-    attrs_3d = []
-    attrs = [attrs_scalars, attrs_profiles, attrs_2d, attrs_3d]
+    attrs_2d = ['J^rho', 'B^theta']
+    attrs_3d = ['J^rho', 'B^theta']
+    attrs = attrs_scalars + attrs_profiles + attrs_2d + attrs_3d ## Contains duplicates
     attrs_label_dict: dict = field(default_factory = dict)
 
     #### Quantities used for 1D profiles
@@ -22,17 +22,24 @@ class viz_params:
     #### Quantities used for 2D plots
     
     grid_const_rho_args = {
-       # "NFP": eq_tok.NFP,
         "sym": False,
         "axis": False,
         "endpoint": True,
         "M": 33, 
         "N": 33,
-        #"rho": np.array([1.0])
     }
     surf2d_num_rho = 6
     surf2d_num_phi = 8
 
+
+    #### Quantities used for 3D plots
+    grid_3d_args = {
+        "M": 50, 
+        "NFP": 1, 
+        "endpoint": True
+    }
+    surf3d_num_rho = 6
+    
 
 
 
@@ -48,6 +55,7 @@ class viz_params:
     eq_loaded: list = field(default_factory = list) ## list of Equilbrium objects
     pp_eq_loaded: list = field(default_factory = list) ## list of dictionaries, one per Equilibrium object
     eq_names_list: list = field(default_factory = list) ## for displaying on the dropdown
+
 
 
     

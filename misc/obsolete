@@ -1,0 +1,76 @@
+## div element for 1D profile selection (left panel)
+def panel_1dprofiles(params):
+     title = html.Div(
+            children = 'Select profile type',
+            style = {
+                'color': blue,
+                'fontSize': 20,
+                'text-align': 'center'
+            },
+            className = 'mt-3 mb-3'
+        )
+     column = dbc.Col([
+              title,
+              html.Hr(),
+              dbc.RadioItems(
+                    options={i: i for i in params.attrs_profiles},
+                    value=params.attrs_profiles[0],
+                    id='buttons_1dprofiles',
+                    className = 'mb-3'
+                ),
+        
+            ], className='mb-3', width=4
+            )
+     return column
+
+
+
+
+
+## div element for 1D profile figures (right panel)
+def figure_1dprofiles():
+    fig_display = html.Div(children=[dcc.Graph(figure={}, id='fig_1dprofiles', mathjax=True)],
+                            style={}
+                            )
+    column = dbc.Col(fig_display, 
+                    width = 5,
+                    className = 'mb-3 align-items-center')
+    return column
+
+
+
+
+
+
+def panel_2d_right(params):
+    title = html.Div(
+            children = 'Select profile type',
+            style = {
+                'color': blue,
+                'fontSize': 20,
+                'text-align': 'center'
+            },
+            className = 'mt-3 mb-3'
+        )
+    column = dbc.Col([
+              figure_2d(),
+              slider_2dprofiles(),
+              title,
+              html.Hr(),
+              dbc.RadioItems(
+                    options={'const_rho': 'Constant rho surfaces', 'const_phi': 'Constant phi surfaces'},
+                    value='const_rho',
+                    id='buttons_2d_whichview',
+                    className = 'mb-3'
+                ),
+              html.Hr(),
+              dbc.RadioItems(
+                    options={i: i for i in params.attrs_2d},
+                    value=params.attrs_2d[0],
+                    id='buttons_2dprofiles_list',
+                    className = 'mb-3'
+                ),
+        
+            ], className='mb-3', width=5
+            )
+    return column
