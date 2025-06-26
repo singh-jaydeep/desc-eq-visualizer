@@ -74,3 +74,42 @@ def panel_2d_right(params):
             ], className='mb-3', width=5
             )
     return column
+
+
+
+
+
+
+### For adding rotated y axis labels to the 1d profile graphs. Not necessary given title.
+fig.update_layout(
+        annotations=[
+            {
+                'text': fr'${params.attrs_label_dict[quantity]}$',
+                'xref':"paper",
+                'yref':"paper",
+                'x': -.1,
+                'y': .5,
+                'showarrow': False,
+                'textangle': 0,
+                'xanchor':"left",
+                'yanchor':"bottom",
+                'font': dict(size=14)
+            }
+        ],
+        title={
+            'text': title,
+            'x': 0.5,
+            'y': 0.93,
+        },
+    )
+
+
+
+### Title of table
+html.Div(children="Computed scalar values",
+                             style = {'color': 'white',
+                                      'fontSize': 20
+                                      #'text-align': 'center'
+                            },
+                            className = 'mt-3 mb-3'
+                    ),

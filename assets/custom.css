@@ -1,5 +1,34 @@
-body {
-    margin: 0;
-    padding: 0;
-    background-color: lightcyan;
+/* Outer control area */
+.Select-control {
+    background-color: #343a40 !important;
+    color: white !important;
+    border: 1px solid #495057 !important;
+}
+
+/* Selected value text */
+.Select-value-label {
+    color: white !important;
+}
+
+/* Placeholder text */
+.Select-placeholder {
+    color: #adb5bd !important;
+}
+
+/* Dropdown menu */
+.VirtualizedSelectOption {
+    background-color: #343a40 !important;
+    color: white !important;
+}
+
+/* Highlighted (hovered) option */
+.VirtualizedSelectFocusedOption {
+    background-color: #495057 !important;
+    color: white !important;
+}
+
+/* Dropdown menu container */
+.Select-menu-outer {
+    background-color: #343a40 !important;
+    border: 1px solid #495057 !important;
 }

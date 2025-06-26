@@ -5,8 +5,30 @@ import numpy as np
 from desc.plotting import plot_2d, plot_section
 import plotly.graph_objects as go
 import plotly
+import plotly_plotting as pp
+import matplotlib.pyplot as plt
+from desc.plotting import plot_surfaces, plot_2d, plot_section, plot_3d
+from params import viz_params
 
 
+eq = desc.io.load('equilibria/base_desc_outputs/eq_tok_eps_0.4.h5')
+quant = eq.compute('p')
+print(quant['p'])
+
+'''
+params = viz_params()
+eq = desc.io.load('equilibria/base_desc_outputs/eq_tok_eps_0.4.h5')
+fig0, _, data = plot_surfaces(eq, return_data = True)
+plt.close(fig0)
+xdata1 = data['rho_R_coords'][:,:,0]
+ydata1 = data['rho_Z_coords'][:,:,0]
+xdata2 = data['vartheta_R_coords'][:,:,0].T
+ydata2 = data['vartheta_Z_coords'][:,:,0].T
+fig = pp.plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, 0, 0, params)
+fig.show()
+'''
+
+'''
 eq = desc.io.load('equilibria/base_desc_outputs/eq_tok_eps_0.4.h5')
 fig,_,data = plot_section(eq, 'J^rho', phi = 8, return_data=True)
 xdata = data['R'][:,:,0]
@@ -35,7 +57,7 @@ fig.update_layout(
         )   
 )
 fig.show()
-
+'''
 
 '''
 eq = desc.io.load('equilibria/base_desc_outputs/eq_tok_eps_0.4.h5')

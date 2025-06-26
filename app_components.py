@@ -16,6 +16,8 @@ import gzip
 import numpy as np
 from fractions import Fraction
 
+from plotly_plotting import plot_colortheme 
+
 #################################################
 # Global style things
 #################################################
@@ -31,11 +33,11 @@ def comp_title():
             dbc.Row(
                     dbc.Col('DESC Visualization Dashboard', 
                             width=12, 
-                            className='text-center mb-4 mt-3',
+                            className='mb-4 mt-4 ms-3',
                             style ={
-                                'color': blue,
-                                'fontSize': 30,
-                                'font-weight': 'bold'
+                                'color': 'white',
+                                'fontSize': 25,
+                                #'font-weight': 'bold'
                             }
                     )
             )
@@ -53,10 +55,12 @@ def comp_eq_dropdown(params):
                         options=options,
                         id='main_dropdown',
                         value='0',
-                        style={'margin-bottom':'20px'}
+                        style={'margin-bottom':'20px', 
+                               'margin-left': '10px',
+                                }
                     )
-                ], className='justify-content-center', width=3)
-            ], justify='center')
+                ], className='justify-content-center', width=2)
+            ])
      return div
 
 def comp_tabs(params):
@@ -83,7 +87,7 @@ def comp_tabs(params):
                         tab_id = 'tab4',
                         children=[comp_tab4(params)]
                     ),
-                ], id="tabs", active_tab="tab2")
+                ], id="tabs", active_tab="tab2", style=dict(color="primary"))
             ], width=12)
     ])
     return div
@@ -97,22 +101,46 @@ def comp_tab1(params):
     div = dbc.Container([
             dbc.Row([
                 dbc.Col([
-                    html.Div(children="Computed scalar values",
-                             style = {'color': blue,
-                                      'fontSize': 20,
-                                      'text-align': 'center'
-                            },
-                            className = 'mt-3 mb-3'
-                    ),
                     dash_table.DataTable(data=None,
                                          columns=[
                                             {"name": "Parameter", "id": "Parameter"},
                                             {"name": "Value", "id": "Value"}
                                         ],
+                                        style_table={
+                                            'overflowX': 'auto',
+                                            'backgroundColor': '#343a40'  # Table wrapper (optional)
+                                        },
+                                        style_cell={
+                                            'backgroundColor': '#343a40',
+                                            'color': 'white',
+                                            'border': '1px solid #495057'
+                                        },
+                                        style_header={
+                                            'backgroundColor': '#495057',
+                                            'color': 'white',
+                                            'fontWeight': 'bold',
+                                            'border': '1px solid #6c757d'
+                                        },
+                                        style_data_conditional=[
+                                            {
+                                                'if': {'row_index': 'odd'},
+                                                'backgroundColor': '#3e444a',
+                                            },
+                                            {
+                                                'if': {'state': 'active'},  # Clicked row
+                                                'backgroundColor': '#495057',
+                                                'border': '1px solid #adb5bd'
+                                            },
+                                            {
+                                                'if': {'state': 'selected'},  # Selected via checkbox
+                                                'backgroundColor': '#198754',  # Bootstrap 'success' green
+                                                'color': 'white'
+                                            }
+                                        ],
                                         id='summary-table')
-                ])
+                ], width=6)
             ])
-    ])
+    ], className='mt-5')
     return div
 
 ## Tab 1 update, triggered by callback 
@@ -185,16 +213,32 @@ def panel_1dprofiles_right(params):
 
 def figure_1dprofiles_left():
     fig_row_left = dbc.Row([
-                dbc.Col(dcc.Graph(figure={}, id='fig_1dprofiles_left', mathjax=True), 
-                            className = 'mb-3 align-items-center')
-            ])
+                        dbc.Col(
+                            html.Div(
+                                dcc.Graph(figure={}, id='fig_1dprofiles_left', mathjax=True),
+                                style={
+                                    'border': '1px solid #495057',   
+                                    'border-radius': '4px',
+                                    'padding': '5px',
+                                    'backgroundColor': '#2c3034'    
+                                }
+                            ), 
+                        className = 'mb-3 align-items-center')])
     return fig_row_left
 
 def figure_1dprofiles_right():
     fig_row_right = dbc.Row([
-                dbc.Col(dcc.Graph(figure={}, id='fig_1dprofiles_right', mathjax=True), 
-                            className = 'mb-3 align-items-center')
-            ])
+                        dbc.Col(
+                            html.Div(
+                                dcc.Graph(figure={}, id='fig_1dprofiles_right', mathjax=True),
+                                style={
+                                    'border': '1px solid #495057',   
+                                    'border-radius': '4px',
+                                    'padding': '5px',
+                                    'backgroundColor': '#2c3034'    
+                                }
+                            ), 
+                        className = 'mb-3 align-items-center')])
     return fig_row_right
 
 
@@ -211,27 +255,14 @@ def update_figure_1dprofiles(eq_index,quantity,params):
     fig = px.line(df, x='x', y='y', labels=labels)
     title = fr'$\text{{Radial profile of }} {params.attrs_label_dict[quantity]}$'
     fig.update_layout(
-        annotations=[
-            {
-                'text': fr'${params.attrs_label_dict[quantity]}$',
-                'xref':"paper",
-                'yref':"paper",
-                'x': -.1,
-                'y': .5,
-                'showarrow': False,
-                'textangle': 0,
-                'xanchor':"left",
-                'yanchor':"bottom",
-                'font': dict(size=14)
-            }
-        ],
         title={
             'text': title,
             'x': 0.5,
             'y': 0.93,
-        },
+        }
+        #template='plotly_dark'
     )
-    return fig
+    return plot_colortheme(fig)
 
 
 
@@ -288,14 +319,18 @@ def panel_2d_right(params):
 
 def figure_fluxsurf():
     fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_fluxsurf', mathjax=True)],
-                            style={}
+                            style={'border': '1px solid #495057',   
+                                    'border-radius': '4px',
+                                    'padding': '5px',
+                                    'backgroundColor': '#2c3034'}
                             )
     column = dbc.Col(fig_display, 
                     className = 'mb-3')
     return column
 
 def update_figure_fluxsurf(eq_index,slider_val, params):
-    return params.pp_eq_loaded[eq_index]['flux_surfaces'][slider_val]
+    fig = params.pp_eq_loaded[eq_index]['flux_surfaces'][slider_val]
+    return plot_colortheme(fig)
 
 
 def slider_fluxsurf():
@@ -316,7 +351,10 @@ def update_slider_fluxsurf(eq_index,params):
 
 def figure_2d():
     fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_2d', mathjax=True)],
-                            style={}
+                            style={'border': '1px solid #495057',   
+                                    'border-radius': '4px',
+                                    'padding': '5px',
+                                    'backgroundColor': '#2c3034'}
                             )
     column = dbc.Col(fig_display, 
                     className = 'mb-3')
@@ -324,9 +362,10 @@ def figure_2d():
 
 def update_figure_2dprofiles(eq_index,view, quantity, slider_val,params):
     if view == 'const_rho':
-        return params.pp_eq_loaded[eq_index][quantity+'2d'+'const_rho'][slider_val]
+        fig = params.pp_eq_loaded[eq_index][quantity+'2d'+'const_rho'][slider_val]
     else:
-        return params.pp_eq_loaded[eq_index][quantity+'2d'+'const_phi'][slider_val]
+        fig = params.pp_eq_loaded[eq_index][quantity+'2d'+'const_phi'][slider_val]
+    return plot_colortheme(fig)
 
 def slider_2dprofiles():
     slider=dcc.Slider(min=0, max = 0, step = None, marks={}, value=0, id='slider_2d')

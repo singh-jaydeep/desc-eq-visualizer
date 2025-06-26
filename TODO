@@ -1,12 +1,45 @@
+##############################
+-- Basics: functionality
+##############################
+-- Fill out the quantities which can be plotted in params.py
+-- Fix whatever is happening with the 3D graphs
+-- Add magnetic field lines on 2D const. rho plots
+-- On 2D const rho plots, add option to see density heatmap vs contours. Or add contours to the heatmap? 
 
--- alignment of graphs in "Cross sections" tab is currently hardcoded. Replace with a single row element containing the graphs.
-
-
+##############################
+-- Basics: design
+##############################
 -- All the formatting for table in tab 1
+-- Font sizes for plots
+-- Plot titles + axes labels
+-- Graphs in "Cross sections tab." Replace with a single row element containing the graphs so alignment is automatic.
+-- Flux surfaces: find better colors, and more helpful things to show.  Also do you need to show the grid lines? 
+-- Add units to all labels. 
+-- Figure out how they plot the 2D, constant phi heatmaps in DESC. Improve our plots
+    
 
--- Fix formatting on the 1d graphs in tab 2 (font size, rotate y label)
+
+##############################
+-- Performance  
+##############################
+-- See how memory and app loading time behave with more saved equilibria. 
+    -- If loading time is a problem, add dropdown with checkmarks for which equilibria the user wants loaded.
 
 
--- Add to the lists of plottable things in params.py, and test more equilibria. Do things slow down?
+##############################
+-- Overall program logic/design
+##############################
+-- Check if the bulk of time required to build graph is due to desc computing the data, or actual graph building. 
+   -- If former, store data arrays (as .h5 files) rather than building plotly graph first.
+-- The preprocess script does not need separate functions for computing each type of quantity.
 
 
+##############################
+-- New features
+##############################
+-- Load in equilibrium families. 
+-- Option to click on the 2D or 3D plots and blow them up into a larger overlaid window, for closer inspection.
+-- Hover over a flux surface and see basic parameters (rho, iota)
+-- How much fun would it be to show trajectories of particles! 
+    -- At the very least, can show a vector field of the direction of first order drift at each point.
+-- Try to properly represent the magnetic axis in 3D. Probably already computed in DESC.

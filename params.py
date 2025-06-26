@@ -4,10 +4,10 @@ from desc.grid import LinearGrid
 
 @dataclass
 class viz_params:
-    attrs_scalars = ['<beta>_vol','<|grad(p)|>_vol']
-    attrs_profiles= ['iota','<|B|>']
-    attrs_2d = ['J^rho', 'B^theta']
-    attrs_3d = ['J^rho', 'B^theta']
+    attrs_scalars = ['<beta>_vol','<|grad(p)|>_vol', '<|F|>_vol'] 
+    attrs_profiles= ['iota','<|B|>', '<J*B>', 'p', 'q']
+    attrs_2d = ['J^rho', 'B^theta', 'sqrt(g)', '|B|']
+    attrs_3d = ['J^rho', 'B^theta', 'sqrt(g)', '|B|']
     attrs = attrs_scalars + attrs_profiles + attrs_2d + attrs_3d ## Contains duplicates
     attrs_label_dict: dict = field(default_factory = dict)
 

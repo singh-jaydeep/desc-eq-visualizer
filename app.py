@@ -18,7 +18,7 @@ ac.initialize(params)
 #################################################
 # App layout
 #################################################
-app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(external_stylesheets=[dbc.themes.DARKLY])
 
 app.layout = html.Div([
     ac.comp_title(),

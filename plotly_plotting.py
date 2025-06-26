@@ -12,7 +12,7 @@ def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_index, eq_NFP, para
         fig.add_trace(go.Scatter(x=xdata1[:,i], y= ydata1[:,i], 
                                 mode = 'lines',
                                 line = dict(
-                                    color='blue',
+                                    color="#030E4D",
                                     width=3
                                 )))
         fig.update_traces(showlegend=False)
@@ -20,19 +20,18 @@ def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_index, eq_NFP, para
         fig.add_trace(go.Scatter(x=xdata2[:,i], y= ydata2[:,i], 
                                 mode = 'lines',
                                 line = dict(
-                                    color='black',
+                                    color="#000000",
                                     width=2,
                                     dash='dash'
                                 )))
         fig.update_traces(showlegend=False)
     
-    
-    num = 2*phi_index
-    denom = params.fx_num_phi*eq_NFP
+
+    phi_curr = np.round(2*phi_index/params.fx_num_phi*eq_NFP,3)
 
     fig.update_layout(
         title={
-            'text': fr"$\text{{Flux surfaces at toroidal angle }} \phi = \frac{{{num}}}{{{denom}}}\pi$",
+            'text': fr"$\text{{Flux surfaces at toroidal angle }} \phi = {phi_curr}\pi$",
             'x': 0.5,
             'y': 0.85,
         },
@@ -73,10 +72,10 @@ def plotly_plot_2dsurf_const_rho(data, quantity, rho_index, params):
     thetadata = np.linspace(0,2*3.14159, numtheta)
     zetadata = np.linspace(0, 2*3.14159, numzeta)
     ############
-    fig.add_heatmap(autocolorscale=True, y=thetadata, x=zetadata, z=data) ## Check order
+    fig.add_heatmap(autocolorscale=False, colorscale='plasma', y=thetadata, x=zetadata, z=data) ## Check order
 
     rho_curr = round(1/params.surf2d_num_rho * rho_index,3)
-    title = fr'${params.attrs_label_dict[quantity]} \ \text{{at fixed flux surface }} \rho={rho_curr}$'
+    title = fr'${params.attrs_label_dict[quantity]} \ \text{{at flux surface }} \rho={rho_curr}$'
 
     fig.update_layout(
         title={
@@ -123,7 +122,7 @@ def plotly_plot_2dsurf_const_phi(xdata,ydata,zdata, quantity, phi_index, eq_NFP,
                     )
         ])
     phi_curr = round(2*np.pi/(params.surf2d_num_phi*eq_NFP) * phi_index,3)
-    title=fr'${params.attrs_label_dict[quantity]} \ \text{{at fixed toroidal angle }} \phi={phi_curr}\pi$'
+    title=fr'${params.attrs_label_dict[quantity]} \ \text{{at toroidal angle }} \phi={phi_curr}\pi$'
     fig.update_layout(
         scene_camera=dict(eye=dict(x=0., y=0., z=2.)),
         scene_dragmode=False,  
@@ -148,7 +147,7 @@ def plotly_plot_3dsurf(fig, quantity, rho_index, params):
         len = 400
     ))
     rho_curr = round(1/params.surf3d_num_rho * rho_index,3)
-    title = fr'${params.attrs_label_dict[quantity]} \ \text{{at fixed flux surface }} \rho={rho_curr}$'
+    title = fr'${params.attrs_label_dict[quantity]} \ \text{{at flux surface }} \rho={rho_curr}$'
     fig.update_layout(title={
             'text': title,
             'x': 0.5,
@@ -157,3 +156,23 @@ def plotly_plot_3dsurf(fig, quantity, rho_index, params):
             scene_camera=dict(eye=dict(x=2., y=2., z=2.))
     )
     return fig
+
+
+
+def plot_colortheme(fig):
+    fig.update_layout(
+        paper_bgcolor='#2c3034',
+        plot_bgcolor='#2c3034',
+        font_color='white'
+    )
+    return fig
+
+
+'''
+ scene=dict(
+        bgcolor='black',
+        xaxis=dict(color='white', gridcolor='gray'),
+        yaxis=dict(color='white', gridcolor='gray'),
+        zaxis=dict(color='white', gridcolor='gray')
+    )
+'''
