@@ -4,10 +4,10 @@ from desc.grid import LinearGrid
 
 @dataclass
 class viz_params:
-    attrs_scalars = ['<beta>_vol','<|grad(p)|>_vol', '<|F|>_vol'] 
+    attrs_scalars = ['a', 'R0', 'R0/a','<beta>_vol','<|grad(p)|>_vol', '<|F|>_vol'] 
     attrs_profiles= ['iota','<|B|>', '<J*B>', 'p', 'q']
     attrs_2d = ['J^rho', 'B^theta', 'sqrt(g)', '|B|']
-    attrs_3d = ['J^rho', 'B^theta', 'sqrt(g)', '|B|']
+    attrs_3d = ['1', 'J^rho', 'B^theta', 'sqrt(g)', '|B|'] #'1' used to plot the flux surface shapes
     attrs = attrs_scalars + attrs_profiles + attrs_2d + attrs_3d ## Contains duplicates
     attrs_label_dict: dict = field(default_factory = dict)
 
@@ -39,6 +39,8 @@ class viz_params:
         "endpoint": True
     }
     surf3d_num_rho = 6
+
+    attrs_mag_axis = ['curvature','torsion'] ## Will automatically compute and display (x,y,z) coordinates, so no need to include
     
 
 

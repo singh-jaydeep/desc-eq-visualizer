@@ -15,8 +15,9 @@ import json
 import gzip
 import numpy as np
 from fractions import Fraction
+import pprint
 
-from plotly_plotting import plot_colortheme 
+from plotly_plotting import plot_theme, borderstyle
 
 #################################################
 # Global style things
@@ -86,7 +87,7 @@ def comp_tabs(params):
                         label = '3D Views',
                         tab_id = 'tab4',
                         children=[comp_tab4(params)]
-                    ),
+                    )
                 ], id="tabs", active_tab="tab2", style=dict(color="primary"))
             ], width=12)
     ])
@@ -216,12 +217,7 @@ def figure_1dprofiles_left():
                         dbc.Col(
                             html.Div(
                                 dcc.Graph(figure={}, id='fig_1dprofiles_left', mathjax=True),
-                                style={
-                                    'border': '1px solid #495057',   
-                                    'border-radius': '4px',
-                                    'padding': '5px',
-                                    'backgroundColor': '#2c3034'    
-                                }
+                                style=borderstyle()
                             ), 
                         className = 'mb-3 align-items-center')])
     return fig_row_left
@@ -231,12 +227,7 @@ def figure_1dprofiles_right():
                         dbc.Col(
                             html.Div(
                                 dcc.Graph(figure={}, id='fig_1dprofiles_right', mathjax=True),
-                                style={
-                                    'border': '1px solid #495057',   
-                                    'border-radius': '4px',
-                                    'padding': '5px',
-                                    'backgroundColor': '#2c3034'    
-                                }
+                                style=borderstyle()
                             ), 
                         className = 'mb-3 align-items-center')])
     return fig_row_right
@@ -260,9 +251,8 @@ def update_figure_1dprofiles(eq_index,quantity,params):
             'x': 0.5,
             'y': 0.93,
         }
-        #template='plotly_dark'
     )
-    return plot_colortheme(fig)
+    return plot_theme(fig)
 
 
 
@@ -319,18 +309,14 @@ def panel_2d_right(params):
 
 def figure_fluxsurf():
     fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_fluxsurf', mathjax=True)],
-                            style={'border': '1px solid #495057',   
-                                    'border-radius': '4px',
-                                    'padding': '5px',
-                                    'backgroundColor': '#2c3034'}
-                            )
+                            style=borderstyle())
     column = dbc.Col(fig_display, 
                     className = 'mb-3')
     return column
 
 def update_figure_fluxsurf(eq_index,slider_val, params):
     fig = params.pp_eq_loaded[eq_index]['flux_surfaces'][slider_val]
-    return plot_colortheme(fig)
+    return fig
 
 
 def slider_fluxsurf():
@@ -351,11 +337,7 @@ def update_slider_fluxsurf(eq_index,params):
 
 def figure_2d():
     fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_2d', mathjax=True)],
-                            style={'border': '1px solid #495057',   
-                                    'border-radius': '4px',
-                                    'padding': '5px',
-                                    'backgroundColor': '#2c3034'}
-                            )
+                            style=borderstyle())
     column = dbc.Col(fig_display, 
                     className = 'mb-3')
     return column
@@ -365,7 +347,7 @@ def update_figure_2dprofiles(eq_index,view, quantity, slider_val,params):
         fig = params.pp_eq_loaded[eq_index][quantity+'2d'+'const_rho'][slider_val]
     else:
         fig = params.pp_eq_loaded[eq_index][quantity+'2d'+'const_phi'][slider_val]
-    return plot_colortheme(fig)
+    return fig
 
 def slider_2dprofiles():
     slider=dcc.Slider(min=0, max = 0, step = None, marks={}, value=0, id='slider_2d')
@@ -396,67 +378,51 @@ def comp_tab4(params):
             dbc.Row([
                 panel_3d_left(params),
                 panel_3d_right(params),
-            ], justify='center')
+            ])
         ])
     return div
 
 
 
 def panel_3d_left(params):
+    options = {i: i for i in params.attrs_3d}
+    options['1'] = 'flux surfaces'
+    options['magnetic axis'] = 'magnetic axis'
+
     dropdown = dbc.Row([
                 dbc.Col([
                     dcc.Dropdown(
-                        options={i: i for i in params.attrs_3d},
-                        id='dropdown_3d_left',
+                        options=options,
+                        id='dropdown_3d',
                         value=params.attrs_3d[0],
-                        style={'margin-top':'20px'}
+                        style={'margin-top':'20px', 'margin-bottom': '20px'}
                     )], className='justify-content-center', width=6)
             ], justify='center')
     column_left = dbc.Col([
                    dropdown,
-                   figure_3d_left(),
-                   slider_3d_left(params)
-               ], width=6) 
+                   slider_3d(params)
+               ], width=3) 
 
     return column_left
 
 def panel_3d_right(params):
-    dropdown = dbc.Row([
-                dbc.Col([
-                        dcc.Dropdown(
-                            options={i: i for i in params.attrs_3d},
-                            id='dropdown_3d_right',
-                            value=params.attrs_3d[1],
-                            style={'margin-top':'20px'}
-                        )
-                    ], className='justify-content-center', width=6)
-            ], justify='center')
-    column_right = dbc.Col([
-                   dropdown,
-                   figure_3d_right(),
-                   slider_3d_right(params),
-               ], width=6) 
+    column_right = dbc.Col(html.Div(children=[figure_3d()], style={'margin-top': '20px'}), width=6) 
     return column_right
 
-def figure_3d_left():
-    fig_row_left = dbc.Row([
-                dbc.Col(dcc.Graph(figure={}, id='fig_3d_left', mathjax=True), 
-                            className = 'mb-3 align-items-center')
+
+
+def figure_3d():
+    fig_row = dbc.Row([
+                dbc.Col(html.Div(children=[dcc.Graph(figure={}, id='fig_3d', mathjax=True)], style=borderstyle()), 
+                            className = 'mb-3')
             ])
-    return fig_row_left
-
-def figure_3d_right():
-    fig_row_right = dbc.Row([
-                dbc.Col(dcc.Graph(figure={}, id='fig_3d_right', mathjax=True), 
-                            className = 'mb-3 align-items-center')
-            ])
-    return fig_row_right
+    return fig_row
 
 
-def slider_3d_left(params):
-    max = params.surf3d_num_rho
-    marks = {i: '' for i in range(0,params.surf3d_num_rho+1)}
-    slider=dcc.Slider(min=0, max = max, step = None, marks=marks, value=0, id='slider_3d_left')
+def slider_3d(params):
+    max = params.surf3d_num_rho-1
+    marks = {i: '' for i in range(0,params.surf3d_num_rho)} 
+    slider=dcc.Slider(min=0, max = max, step = None, marks=marks, value=params.surf3d_num_rho-1, id='slider_3d')
     col = dbc.Row([
             dbc.Col([
                 slider
@@ -464,23 +430,24 @@ def slider_3d_left(params):
     ], justify='center')
     return col
 
-def slider_3d_right(params):
-    max = params.surf3d_num_rho
-    marks = {i: '' for i in range(0,params.surf3d_num_rho+1)}
-    slider=dcc.Slider(min=0, max = max, step = None, marks=marks, value=0, id='slider_3d_right')
-    col = dbc.Row([
-            dbc.Col([
-                slider
-            ], className = 'mb-3 align-items-center', width=8)
-    ], justify='center')
-    return col
+
 
 def update_figure_3dprofiles(eq_index, quantity, slider_val, params):
-    fig = params.pp_eq_loaded[eq_index][quantity+'3d'][slider_val]
-    fig.update_layout(
-        scene_camera=dict(eye=dict(x=3., y=3., z=3.))
-    )
+    if quantity == 'magnetic axis':
+        fig = params.pp_eq_loaded[eq_index]['magnetic axis3d']
+    else:
+        fig = params.pp_eq_loaded[eq_index][quantity+'3d'][slider_val] 
     return fig
+
+
+
+
+
+
+
+
+
+
 
 #################################################
 # Initialization code
@@ -491,13 +458,14 @@ def initialize(params):
         desc_path = os.path.join(params.base_desc_path, item)
         params.eq_names_list.append(item.removesuffix('.h5'))
         params.eq_loaded.append(desc.io.load(desc_path)) ## loading the equilibrium via DESC
-        #build_label_dict(params)
         params.pp_eq_loaded.append(build_data_dict(item, params)) ## loading the precomputed data
+
+
 
 
 ## unpacks the preprocessed files
 def build_data_dict(curr_eq, params): 
-    dict = {}
+    data_dict = {}
     path_json = os.path.join(params.pp_desc_path, 'pp_'+curr_eq.removesuffix('.h5')+'.json')
     with gzip.open(path_json, 'rt') as g:
         data_collected = json.load(g)
@@ -508,21 +476,27 @@ def build_data_dict(curr_eq, params):
 
     ######## Loading summary statistics
     for i in range(0, len(params.attrs_scalars)):
-        dict[params.attrs_scalars[i]] = data_array[0][i]
+        data_dict[params.attrs_scalars[i]] = data_array[0][i]
 
     ######## Loading 1D profiles
     for i in range(0, len(params.attrs_profiles)):
-        dict[params.attrs_profiles[i]] = data_array[1][i]
+        data_dict[params.attrs_profiles[i]] = data_array[1][i]
 
     ######### Loading flux surface figures, 2dplots, and 3d plots, reconverting to plotly
-    dict['flux_surfaces'] = [plotly.io.from_json(fig) for fig in figure_list[0]]
+    data_dict['flux_surfaces'] = [plotly.io.from_json(fig) for fig in figure_list[0]]
     for i in range(0,len(params.attrs_2d)):
         q = params.attrs_2d[i]
-        dict[q+'2d'+'const_rho'] = [plotly.io.from_json(fig) for fig in figure_list[i+1]]
-        dict[q+'2d'+'const_phi'] = [plotly.io.from_json(fig) for fig in figure_list[i+1+len(params.attrs_2d)]]
+        data_dict[q+'2d'+'const_rho'] = [plotly.io.from_json(fig) for fig in figure_list[i+1]]
+        data_dict[q+'2d'+'const_phi'] = [plotly.io.from_json(fig) for fig in figure_list[i+1+len(params.attrs_2d)]]
     for i in range(0, len(params.attrs_3d)):
         q = params.attrs_3d[i]
-        dict[q+'3d'] = [plotly.io.from_json(fig) for fig in figure_list[i + 1 + len(params.attrs_2d) + len(params.attrs_2d)]]
+        data_dict[q+'3d'] = [plotly.io.from_json(fig) for fig in figure_list[i + 1 + len(params.attrs_2d) + len(params.attrs_2d)]]
 
-    return dict
+    ######## Loading magnetic axis
+    data_dict['magnetic axis3d'] = plotly.io.from_json(figure_list[1+2*len(params.attrs_2d)+len(params.attrs_3d)])
+
+
+    
+
+    return data_dict
 

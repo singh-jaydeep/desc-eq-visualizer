@@ -5,6 +5,8 @@
 -- Fix whatever is happening with the 3D graphs
 -- Add magnetic field lines on 2D const. rho plots
 -- On 2D const rho plots, add option to see density heatmap vs contours. Or add contours to the heatmap? 
+-- Hover text over the entries in the table should tell you what the variable means
+-- Column in table for units
 
 ##############################
 -- Basics: design
@@ -16,6 +18,7 @@
 -- Flux surfaces: find better colors, and more helpful things to show.  Also do you need to show the grid lines? 
 -- Add units to all labels. 
 -- Figure out how they plot the 2D, constant phi heatmaps in DESC. Improve our plots
+-- For QS, need to allow user to specify helicity 
     
 
 

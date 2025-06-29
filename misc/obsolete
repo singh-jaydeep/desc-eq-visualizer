@@ -113,3 +113,168 @@ html.Div(children="Computed scalar values",
                             },
                             className = 'mt-3 mb-3'
                     ),
+
+
+
+###### Testing if interactivity is better when various rho traces for 3D 
+###### plots are placed in same figure object
+###### from desc_preprocess.py
+def test_compute_3dsurfaces(eq_index,params):
+    eq = params.eq_loaded[eq_index]
+    params.grid_3d_args['N'] = int(50 * eq.NFP)
+
+    rho_grid = np.linspace(0,1,params.surf3d_num_rho+1)
+
+    fig_list_json_A = []
+    for q in params.attrs_3d:
+        #fig_list_json_B = []
+        fig = plot_3d(eq, q) ## defaults to rho = 1
+
+        for i in range(0,params.surf3d_num_rho): ## goes up to, but not including, rho = 1
+            params.grid_3d_args['rho'] = np.array([rho_grid[i]])
+            grid = LinearGrid(**params.grid_3d_args)
+            try:
+                fig.add_trace(plot_3d(eq, q, grid=grid).data[0])
+            except:
+                fig = go.Figure()
+
+            
+        fig_list_json_A.append(plotly.io.to_json(fig))
+
+    return fig_list_json_A
+
+
+
+
+
+######### TEST code 
+######### from app_components.py
+    running_tot = 1 + 2*len(params.attrs_2d) + len(params.attrs_3d)
+    
+    fig = plotly.io.from_json(figure_list[running_tot])
+    fig.update_layout(autosize=False, width=1000,height=750)
+    fig.update_layout(scene = dict(aspectmode='manual', aspectratio = {'x': 1, 'y':1, 'z': .125}, 
+                                   xaxis = dict(range=[-2,2], autorange=False),
+                                   yaxis = dict(range=[-2,2], autorange=False),
+                                   zaxis = dict(range=[-.5,.5], autorange=False)))
+
+    for i, trace in enumerate(fig['data']):
+        trace['visible'] = (i == 0) ## this is really the last trace
+    data_dict['TEST'+'J^rho'+'3d'] = fig
+    ######### 
+
+
+    def figure_3d_left():
+    fig_row_left = dbc.Row([
+                dbc.Col(dcc.Graph(figure={}, id='fig_3d_left', mathjax=True), 
+                            className = 'mb-3 align-items-center')
+            ])
+    return fig_row_left
+
+
+def slider_3d_right(params):
+    max = params.surf3d_num_rho
+    marks = {i: '' for i in range(0,params.surf3d_num_rho+1)}
+    slider=dcc.Slider(min=0, max = max, step = None, marks=marks, value=0, id='slider_3d_right')
+    col = dbc.Row([
+            dbc.Col([
+                slider
+            ], className = 'mb-3 align-items-center', width=8)
+    ], justify='center')
+    return col
+
+
+
+@callback(
+    Output('fig_3d_right', 'figure'),
+    Input('main_dropdown', 'value'),
+    Input('dropdown_3d_right','value'),
+    Input('slider_3d_right', 'value'),
+) 
+def update_figure_3dprofiles(eq_index,quantity, slider_val):
+    fig = ac.update_figure_3dprofiles(int(eq_index), quantity, slider_val, params)
+    return fig
+
+
+
+
+def panel_3d_right(params):
+    dropdown = dbc.Row([
+                dbc.Col([
+                        dcc.Dropdown(
+                            options={i: i for i in params.attrs_3d},
+                            id='dropdown_3d_right',
+                            value=params.attrs_3d[1],
+                            style={'margin-top':'20px'}
+                        )
+                    ], className='justify-content-center', width=6)
+            ], justify='center')
+    column_right = dbc.Col([
+                   dropdown,
+                   figure_3d_right(),
+                   slider_3d_right(params),
+               ], width=6) 
+    return column_right
+
+
+
+
+#################################################
+# TEMPORARY Tab 5
+#################################################
+
+def comp_tab5(params):
+    div = html.Div([
+            dbc.Row([
+                test_panel_3d(params),
+            ], justify='center')
+        ])
+    return div
+
+def test_panel_3d(params):
+    max = params.surf3d_num_rho
+    marks = {i: '' for i in range(0,params.surf3d_num_rho+1)}
+    slider=dcc.Slider(min=0, max = max, step = None, marks=marks, value=0, id='test_slider_3d')
+
+    column = dbc.Row([
+        dbc.Col([
+            dcc.Graph(figure=params.pp_eq_loaded[0]['TESTJ^rho3d'], id='test_fig_3d', className = 'mb-3 align-items-center'),
+            slider
+            
+        ])
+    ])
+    return column
+
+
+
+@callback(
+        Output('test_fig_3d', 'figure'),
+        Input('test_slider_3d', 'value'),
+        Input('main_dropdown', 'value'),
+        State('test_fig_3d', 'figure')
+)
+def test_update_visible_trace(slider_val, eq_index, fig):
+    for i, trace in enumerate(fig['data']):
+        trace['visible'] = (i == slider_val) 
+    #pprint.pprint(fig['layout'])
+    return fig
+    
+
+    def compute_3dfluxsurfaces(eq_index, params):
+    eq = params.eq_loaded[eq_index]
+    params.grid_3d_args['N'] = int(50 * eq.NFP)
+
+    rho_grid = np.linspace(0,1,params.surf3d_num_rho+1)
+
+    fig_list_json_B = []
+    for i in range(1,params.surf3d_num_rho+1): ## Won't evaluate rho=0, i.e. the axis
+        params.grid_3d_args['rho'] = np.array([rho_grid[i]])
+        grid = LinearGrid(**params.grid_3d_args)
+        try:
+            fig = plotly_plot_3dsurf(plot_3d(eq, '1', grid=grid), eq_index, '1', i, params)
+        except:
+            fig = go.Figure()
+
+        fig_list_json_B.append(plotly.io.to_json(fig))
+
+    return [fig_list_json_B]

@@ -103,24 +103,25 @@ def update_figure_2dprofiles(eq_index, view, quantity, slider_val):
 # Tab 4
 ###################
 @callback(
-    Output('fig_3d_left', 'figure'),
+    Output('fig_3d', 'figure'),
     Input('main_dropdown', 'value'),
-    Input('dropdown_3d_left','value'),
-    Input('slider_3d_left', 'value'),
+    Input('dropdown_3d','value'),
+    Input('slider_3d', 'value'),
 ) 
 def update_figure_3dprofiles(eq_index,quantity, slider_val):
     fig = ac.update_figure_3dprofiles(int(eq_index), quantity, slider_val, params)
     return fig
 
+
+
 @callback(
-    Output('fig_3d_right', 'figure'),
-    Input('main_dropdown', 'value'),
-    Input('dropdown_3d_right','value'),
-    Input('slider_3d_right', 'value'),
-) 
-def update_figure_3dprofiles(eq_index,quantity, slider_val):
-    fig = ac.update_figure_3dprofiles(int(eq_index), quantity, slider_val, params)
-    return fig
+    Output('slider_3d', 'disabled'),
+    Input('dropdown_3d', 'value')
+)
+def disable_slider_if_axis(quantity):
+    return quantity == 'magnetic axis'
+
+
 
 
 #################################################

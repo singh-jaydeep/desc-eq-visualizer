@@ -1,22 +1,20 @@
 import desc
 import os
 import gzip, json
-import h5py
-from params import viz_params
-
 import matplotlib.pyplot as plt
-
+import pandas as pd
 import numpy as np
-
 import plotly
-from plotly_plotting import plotly_plot_fluxsurf, plotly_plot_2dsurf_const_rho, plotly_plot_2dsurf_const_phi, plotly_plot_3dsurf
+from plotly_plotting import *
 import plotly.graph_objects as go
-
 from desc.equilibrium import Equilibrium
 from desc.grid import LinearGrid
 from desc.plotting import plot_surfaces, plot_2d, plot_section, plot_3d
 from desc.compute.utils import _parse_parameterization
 from desc.compute import data_index
+
+from params import viz_params
+
 
 
 
@@ -38,7 +36,8 @@ def precompute():
             figure_list_2dplots_const_rho = compute_2dsurfaces_const_rho(i,params)
             figure_list_2dplots_const_phi = compute_2dsurfaces_const_phi(i,params)
             figure_list_3dplots = compute_3dsurfaces(i,params)
-            figure_list = figure_list_fluxsurf + figure_list_2dplots_const_rho + figure_list_2dplots_const_phi + figure_list_3dplots
+            figure_list_magneticaxis = compute_magneticaxis(i,params)
+            figure_list = figure_list_fluxsurf + figure_list_2dplots_const_rho + figure_list_2dplots_const_phi + figure_list_3dplots + figure_list_magneticaxis
             write_json(i,data_array,figure_list,params)
 
 
@@ -141,20 +140,68 @@ def compute_3dsurfaces(eq_index,params):
     fig_list_json_A = []
     for q in params.attrs_3d:
         fig_list_json_B = []
-        for i in range(0,params.surf3d_num_rho+1):
+        for i in range(1,params.surf3d_num_rho+1): ## Won't evaluate rho=0, i.e. the axis
             params.grid_3d_args['rho'] = np.array([rho_grid[i]])
             grid = LinearGrid(**params.grid_3d_args)
 
             try:
-                fig = plotly_plot_3dsurf(plot_3d(eq, q, grid=grid), q, i, params)
+                fig = plotly_plot_3dsurf(plot_3d(eq, q, grid=grid), eq_index, q, i, params)
             except:
                 fig = go.Figure()
+
 
             fig_list_json_B.append(plotly.io.to_json(fig))
 
         fig_list_json_A.append(fig_list_json_B)
 
     return fig_list_json_A
+
+
+def compute_magneticaxis(eq_index,params):
+    eq = params.eq_loaded[eq_index]
+    n = 2*eq.NFP + 40
+    grid = LinearGrid(N=n)
+    axis = eq.get_axis()
+
+    def wrap_around(arr):
+        assert len(arr) != 0 
+        return np.append(arr, [arr[0]])
+    
+    curve_data = {q:wrap_around(np.array(axis.compute(q, grid=grid)[q])) for q in ['X', 'Y', 'Z']+params.attrs_mag_axis}
+    df = pd.DataFrame(curve_data)
+
+    fig=go.Figure(data=[go.Scatter3d(x=curve_data['X'],y=curve_data['Y'],z=curve_data['Z'], mode='lines')])
+
+    
+    
+    hovertemplate = '(x,y,z): (%{customdata[0]:.3f}, %{customdata[1]:.3f}, %{customdata[2]:.3f})<br>'
+    for i in range(0,len(params.attrs_mag_axis)):
+        hovertemplate += params.attrs_mag_axis[i] + ': %{' + f'customdata[{3+i}]' + ':.3f}' + '<br>'
+    hovertemplate += '<extra></extra>'
+
+    fig.update_traces(
+        customdata=df,
+        hovertemplate = hovertemplate
+    )
+
+    plot_params = compute_3dplot_params(eq_index, 'magnetic axis', 0, params)
+    fig.update_layout(title={'text': plot_params['title'], 'x': 0.45, 'y': 0.9})
+    fig.update_layout(scene = plot_params['scene'], autosize=False, width= plot_params['width'], height=plot_params['height'],
+                      scene_camera = plot_params['scene_camera'])
+    fig.update_layout(scene = {'xaxis_title': 'X (m)', 'yaxis_title': 'Y (m)', 'zaxis_title': 'Z (m)'})
+
+    fig.update_layout(scene=dict(
+        xaxis=dict(showbackground=True, showgrid=True, backgroundcolor='#2c3034',gridcolor='lightgray',color='white',zeroline=False),
+        yaxis=dict(showbackground=True, showgrid=True, backgroundcolor='#2c3034',gridcolor='lightgray',color='white',zeroline=False),
+        zaxis=dict(showbackground=True, showgrid=True, backgroundcolor='#2c3034',gridcolor='lightgray',color='white',zeroline=False)
+        )
+    )
+
+    return [plotly.io.to_json(plot_theme(fig))]
+
+
+
+
 
 
 def write_json(eq_index, data_array, figure_list, params):
@@ -166,8 +213,16 @@ def write_json(eq_index, data_array, figure_list, params):
 def build_label_dict(params):
     p = _parse_parameterization(params.eq_loaded[0])
     for q in params.attrs:
-        if q not in params.attrs_label_dict:
+        if q not in params.attrs_label_dict and q != '1':
             params.attrs_label_dict[q] = data_index[p][q]["label"]
+        elif q == '1':
+            params.attrs_label_dict[q] = 'flux surfaces'
+    
+
+
+
+
+
 
 
 ###################################
