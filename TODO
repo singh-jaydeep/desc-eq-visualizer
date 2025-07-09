@@ -1,12 +1,13 @@
 ##############################
 -- Basics: functionality
 ##############################
--- Fill out the quantities which can be plotted in params.py
--- Fix whatever is happening with the 3D graphs
+-- Fill out the quantities which can be plotted in params.py (*Low Priority*)
 -- Add magnetic field lines on 2D const. rho plots
 -- On 2D const rho plots, add option to see density heatmap vs contours. Or add contours to the heatmap? 
--- Hover text over the entries in the table should tell you what the variable means
--- Column in table for units
+-- Hover text over the entries in the table should tell you what the variable means, and units
+-- For the flux surfaces, make the grid lines constant as slider varies. 
+-- Why is iota (and q) negative?
+
 
 ##############################
 -- Basics: design
@@ -25,6 +26,9 @@
 ##############################
 -- Performance  
 ##############################
+-- If the 3D plots are taking up most of the memory, then you shouldn't store the same mesh over and 
+   over again. Instead, just store the color map for each quantity, and build when the user loads.
+
 -- See how memory and app loading time behave with more saved equilibria. 
     -- If loading time is a problem, add dropdown with checkmarks for which equilibria the user wants loaded.
 
@@ -40,9 +44,10 @@
 ##############################
 -- New features
 ##############################
--- Load in equilibrium families. 
+-- Load in equilibrium families (Currently loads in only the final equilibrium in a family)
 -- Option to click on the 2D or 3D plots and blow them up into a larger overlaid window, for closer inspection.
 -- Hover over a flux surface and see basic parameters (rho, iota)
 -- How much fun would it be to show trajectories of particles! 
     -- At the very least, can show a vector field of the direction of first order drift at each point.
--- Try to properly represent the magnetic axis in 3D. Probably already computed in DESC.
+-- Show Frenet frame along magnetic axis. 
+    -- Could show a tubular neighborhood + coordinate system

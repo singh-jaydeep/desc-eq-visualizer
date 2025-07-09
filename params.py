@@ -9,7 +9,7 @@ class viz_params:
     attrs_2d = ['J^rho', 'B^theta', 'sqrt(g)', '|B|']
     attrs_3d = ['1', 'J^rho', 'B^theta', 'sqrt(g)', '|B|'] #'1' used to plot the flux surface shapes
     attrs = attrs_scalars + attrs_profiles + attrs_2d + attrs_3d ## Contains duplicates
-    attrs_label_dict: dict = field(default_factory = dict)
+    attrs_dict: dict = field(default_factory = dict)
 
     #### Quantities used for 1D profiles
     grid_profiles = LinearGrid(20,0,0,1)

@@ -107,6 +107,8 @@ def comp_tab1(params):
                                             {"name": "Parameter", "id": "Parameter"},
                                             {"name": "Value", "id": "Value"}
                                         ],
+                                        tooltip_data = hover_tooltip(params),
+                                        tooltip_duration = None,
                                         style_table={
                                             'overflowX': 'auto',
                                             'backgroundColor': '#343a40'  # Table wrapper (optional)
@@ -152,12 +154,23 @@ def update_table_stats(eq_index,params):
 def to_dataframe(eq_index,params):
     dict_whole = params.pp_eq_loaded[eq_index]
     dict_restrict = {key: dict_whole[key] for key in params.attrs_scalars}
-    return pd.DataFrame([
+    df = pd.DataFrame([
         {"Parameter": key, "Value": f"{value:.3e}" if isinstance(value, float) and abs(value) >= 1000 
          else f"{value:.3f}" if isinstance(value, float) 
          else str(value)}
         for key, value in dict_restrict.items()
     ])
+
+    return df
+
+    
+def hover_tooltip(params):
+    text = {q: f'Quantity: {params.attrs_dict[q]['description']}  \n Units: {params.attrs_dict[q]['units']}' for q in params.attrs_scalars}
+
+    hover_list = [{'Parameter': {'value': text[q], 'type': 'markdown'}, 'Value': None} 
+                   for q in params.attrs_scalars]
+    
+    return hover_list
 
 
 
@@ -244,7 +257,7 @@ def update_figure_1dprofiles(eq_index,quantity,params):
     ))
     labels = {'x': r'$\rho$', 'y': ''}
     fig = px.line(df, x='x', y='y', labels=labels)
-    title = fr'$\text{{Radial profile of }} {params.attrs_label_dict[quantity]}$'
+    title = fr'$\text{{Radial profile of }} {params.attrs_dict[quantity]['label']}$'
     fig.update_layout(
         title={
             'text': title,
@@ -366,7 +379,7 @@ def update_slider_2dprofiles(eq_index,view, params):
     else:
         max = params.surf2d_num_phi-1
         marks = {i: '' for i in range(0,params.surf2d_num_phi)}
-    return max, marks
+    return max, marks, 0
 
 
 #################################################
@@ -454,7 +467,13 @@ def update_figure_3dprofiles(eq_index, quantity, slider_val, params):
 #################################################
 def initialize(params):
     print("initializing")
+
+    visible_files = []
     for item in os.listdir(params.base_desc_path):
+        if not item.startswith('.'):
+            visible_files.append(item)
+
+    for item in visible_files:
         desc_path = os.path.join(params.base_desc_path, item)
         params.eq_names_list.append(item.removesuffix('.h5'))
         params.eq_loaded.append(desc.io.load(desc_path)) ## loading the equilibrium via DESC
@@ -470,7 +489,7 @@ def build_data_dict(curr_eq, params):
     with gzip.open(path_json, 'rt') as g:
         data_collected = json.load(g)
     
-    params.attrs_label_dict = data_collected[0]
+    params.attrs_dict = data_collected[0]
     data_array = data_collected[1]
     figure_list = data_collected[2]
 

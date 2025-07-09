@@ -278,3 +278,23 @@ def test_update_visible_trace(slider_val, eq_index, fig):
         fig_list_json_B.append(plotly.io.to_json(fig))
 
     return [fig_list_json_B]
+
+
+
+
+
+## In desc_preprocess.py
+  '''
+    data_dict = {q: data_index[p][q] for q in copy_keys}  #copy.deepcopy(data_index[p])
+    data_dict['1'] = {'label': 'flux surfaces',
+                      'units': '',
+                      'description': 'flux surfaces'
+                      }
+    params.attrs_dict = data_dict
+   
+    for q in params.attrs:
+        if q not in params.attrs_label_dict and q != '1':
+            params.attrs_label_dict[q] = data_index[p][q]["label"]
+        elif q == '1':
+            params.attrs_label_dict[q] = 'flux surfaces'
+    '''

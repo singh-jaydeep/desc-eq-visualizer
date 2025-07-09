@@ -83,6 +83,7 @@ def update_figure_fluxsurf(eq_index, slider_val):
 @callback(
     Output('slider_2d', 'max'),
     Output('slider_2d', 'marks'),
+    Output('slider_2d', 'value'),
     Input('main_dropdown', 'value'),
     Input('dropdown_2d_whichview', 'value')
 ) 

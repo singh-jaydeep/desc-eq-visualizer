@@ -1,4 +1,5 @@
 import desc
+import copy
 import os
 import gzip, json
 import matplotlib.pyplot as plt
@@ -7,11 +8,12 @@ import numpy as np
 import plotly
 from plotly_plotting import *
 import plotly.graph_objects as go
-from desc.equilibrium import Equilibrium
+from desc.equilibrium import Equilibrium, EquilibriaFamily
 from desc.grid import LinearGrid
 from desc.plotting import plot_surfaces, plot_2d, plot_section, plot_3d
 from desc.compute.utils import _parse_parameterization
 from desc.compute import data_index
+from scipy.interpolate import griddata
 
 from params import viz_params
 
@@ -29,7 +31,7 @@ def precompute():
         return
     else:
         print(f"{num_eq} equilibria to preprocess")
-        build_label_dict(params)
+        build_attrs_dict(params)
         for i in range(0, len(params.eq_loaded)):
             data_array = compute_quantities(i,params)
             figure_list_fluxsurf = compute_fluxsurfaces(i, params)
@@ -42,10 +44,20 @@ def precompute():
 
 
 def paths_list(params):
+    visible_files = []
     for item in os.listdir(params.base_desc_path):
+        if not item.startswith('.'):
+            visible_files.append(item)
+
+    for item in visible_files:
         if not os.path.exists(os.path.join(params.pp_desc_path, 'pp_'+item.removesuffix('.h5') + '.json')):
             input_path = os.path.join(params.base_desc_path,item)
-            params.eq_loaded.append(desc.io.load(input_path)) ##! Will be a problem with equilibrium families
+            print(input_path)
+            eq = desc.io.load(input_path)
+            if isinstance(eq, EquilibriaFamily): ## If an equilibrium family, only take the final entry
+                eq = eq[-1]
+
+            params.eq_loaded.append(eq) 
             params.eq_names_list.append(item.removesuffix('.h5'))
 
 
@@ -106,21 +118,36 @@ def compute_2dsurfaces_const_rho(eq_index,params): ## computes for a fixed equil
     return fig_list_json_A
 
 
+
 def compute_2dsurfaces_const_phi(eq_index,params):
     eq = params.eq_loaded[eq_index]
-
     fig_list_json_A = []
     for q in params.attrs_2d:
         fig_list_json_B = []
-
         try:
-            fig,_,data = plot_section(eq,q, phi = params.surf2d_num_phi, return_data=True)
+            fig,_,data = plot_section(eq, q, phi = params.surf2d_num_phi, return_data=True)
+            fig1,_,data1 = plot_surfaces(eq, rho=[1.0], phi=params.surf2d_num_phi, return_data=True)
             plt.close(fig)
+            plt.close(fig1)
+
             for i in range(0,params.surf2d_num_phi):
-                xdata = data['R'][:,:,i]
-                ydata = data['Z'][:,:,i]
-                zdata = data[q][:,:,i]
-                fig_list_json_B.append(plotly.io.to_json(plotly_plot_2dsurf_const_phi(xdata,ydata,zdata,q,i, eq.NFP, params)))
+                xdata = data['R'][:,:,i].flatten()
+                ydata = data['Z'][:,:,i].flatten()
+                zdata = data[q][:,:,i].flatten()
+
+                xlow, xhigh = min(xdata), max(xdata)
+                ylow, yhigh = min(ydata), max(ydata)
+
+                xtarget = np.linspace(xlow,xhigh,100)
+                ytarget = np.linspace(ylow, yhigh,100)
+                targetX, targetY = np.meshgrid(xtarget, ytarget)
+
+                ztarget = griddata((xdata,ydata), zdata, (targetX, targetY) , method='linear')
+
+                outerflux_xdata = data1['rho_R_coords'][:,0,i]
+                outerflux_ydata = data1['rho_Z_coords'][:,0,i]
+
+                fig_list_json_B.append(plotly.io.to_json(plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outerflux_ydata, q,i, eq.NFP, params)))
         except:
             for i in range(0,params.surf2d_num_phi):
                 fig_empty = go.Figure()
@@ -129,6 +156,32 @@ def compute_2dsurfaces_const_phi(eq_index,params):
         fig_list_json_A.append(fig_list_json_B)
 
     return fig_list_json_A
+
+
+
+# def compute_2dsurfaces_const_phi(eq_index,params):
+#     eq = params.eq_loaded[eq_index]
+
+#     fig_list_json_A = []
+#     for q in params.attrs_2d:
+#         fig_list_json_B = []
+
+#         try:
+#             fig,_,data = plot_section(eq,q, phi = params.surf2d_num_phi, return_data=True)
+#             plt.close(fig)
+#             for i in range(0,params.surf2d_num_phi):
+#                 xdata = data['R'][:,:,i]
+#                 ydata = data['Z'][:,:,i]
+#                 zdata = data[q][:,:,i]
+#                 fig_list_json_B.append(plotly.io.to_json(plotly_plot_2dsurf_const_phi(xdata,ydata,zdata,q,i, eq.NFP, params)))
+#         except:
+#             for i in range(0,params.surf2d_num_phi):
+#                 fig_empty = go.Figure()
+#                 fig_list_json_B.append(plotly.io.to_json(fig_empty))
+
+#         fig_list_json_A.append(fig_list_json_B)
+
+#     return fig_list_json_A
 
     
 def compute_3dsurfaces(eq_index,params):
@@ -206,18 +259,26 @@ def compute_magneticaxis(eq_index,params):
 
 def write_json(eq_index, data_array, figure_list, params):
     dest_filename = os.path.join(params.pp_desc_path, 'pp_' + params.eq_names_list[eq_index]+'.json')
-    data_collected = [params.attrs_label_dict, data_array, figure_list]
+    data_collected = [params.attrs_dict, data_array, figure_list]
     with gzip.open(dest_filename, 'wt') as f:
          json.dump(data_collected,f)
 
-def build_label_dict(params):
+def build_attrs_dict(params):
     p = _parse_parameterization(params.eq_loaded[0])
+
+    copy_keys = ['label', 'units', 'description']
     for q in params.attrs:
-        if q not in params.attrs_label_dict and q != '1':
-            params.attrs_label_dict[q] = data_index[p][q]["label"]
+        if q not in params.attrs_dict and q != '1':
+            params.attrs_dict[q] = {r: data_index[p][q][r] for r in copy_keys}
         elif q == '1':
-            params.attrs_label_dict[q] = 'flux surfaces'
-    
+            params.attrs_dict[q] = {'label': 'flux surfaces',
+                                            'units': '',
+                                            'description': 'flux surfaces'
+                                        }
+
+
+
+  
 
 
 

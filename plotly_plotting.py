@@ -27,24 +27,24 @@ def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_index, eq_NFP, para
         fig.update_traces(showlegend=False)
     
 
-    phi_curr = np.round(2*phi_index/params.fx_num_phi*eq_NFP,3)
+    phi_curr = np.round(2*phi_index/(params.fx_num_phi*eq_NFP),3)
 
     fig.update_layout(
         title={
-            'text': fr"$\text{{Flux surfaces at toroidal angle }} \phi = {phi_curr}\pi$",
+            'text': fr"$\text{{Flux surfaces at toroidal angle }} \phi = {phi_curr:.3f}\pi$",
             'x': 0.5,
             'y': 0.85,
         },
         xaxis=dict(
             title=dict(
-                text="R"
+                text="R (m)"
             )
         )
     )
     fig.update_layout(
         annotations=[
             {
-                'text': 'Z',
+                'text': 'Z (m)',
                 'xref':"paper",
                 'yref':"paper",
                 'x': -.15,
@@ -75,7 +75,8 @@ def plotly_plot_2dsurf_const_rho(data, quantity, rho_index, params):
     fig.add_heatmap(autocolorscale=False, colorscale='plasma', y=thetadata, x=zetadata, z=data) ## Check order
 
     rho_curr = round(1/params.surf2d_num_rho * rho_index,3)
-    title = fr'${params.attrs_label_dict[quantity]} \ \text{{at flux surface }} \rho={rho_curr}$'
+    label = params.attrs_dict[quantity]['label']
+    title = fr'${label} \ \text{{at flux surface }} \rho={rho_curr:.3f}$'
 
     fig.update_layout(
         title={
@@ -111,34 +112,27 @@ def plotly_plot_2dsurf_const_rho(data, quantity, rho_index, params):
     return plot_theme(fig)
 
 
-def plotly_plot_2dsurf_const_phi(xdata,ydata,zdata, quantity, phi_index, eq_NFP, params):
-    fig = go.Figure(data=[
-                    go.Surface(
-                        x=xdata,
-                        y=ydata,
-                        z=np.zeros_like(zdata),  
-                        surfacecolor=zdata,      
-                        showscale=True
-                    )
-        ])
+
+def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outerflux_ydata, quantity, phi_index, eq_NFP, params):
+    fig = go.Figure(go.Heatmap(x=xtarget, y=ytarget, z= ztarget, colorscale='Viridis'))
+    fig.add_trace(go.Scatter(
+        x = outerflux_xdata,
+        y = outerflux_ydata,
+        mode='lines',
+        line=dict(color='black', width=2)
+    ))
     phi_curr = round(2*np.pi/(params.surf2d_num_phi*eq_NFP) * phi_index,3)
-    title=fr'${params.attrs_label_dict[quantity]} \ \text{{at toroidal angle }} \phi={phi_curr}\pi$'
+    label = params.attrs_dict[quantity]['label']
+    title=fr'${label} \ \text{{at toroidal angle }} \phi={phi_curr:.3f}\pi$'
     fig.update_layout(
-        scene_camera=dict(eye=dict(x=0., y=0., z=2.)),
-        scene_dragmode=False,  
-        scene=dict(
-            xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=False),
-            zaxis=dict(visible=False)
-        ),
         title={
             'text': title,
             'x': 0.5,
             'y': 0.85,
-        },
+        }
     )
     return plot_theme(fig)
-    
+
 
 
 def plotly_plot_3dsurf(fig, eq_index, quantity, rho_index, params):
@@ -173,17 +167,19 @@ def borderstyle():
             'backgroundColor': '#2c3034'}
 
 
+
+
 def compute_3dplot_params(eq_index,quantity, rho_index, params):
     eq = params.eq_loaded[eq_index]
     plot_params = {}
     rho_curr = round(1/params.surf3d_num_rho * rho_index,3)
 
     if quantity == '1':
-        plot_params['title'] = fr'$\text{{Flux surface }} \rho={rho_curr}$'
+        plot_params['title'] = fr'$\text{{Flux surface }} \rho={rho_curr:.3f}$'
     elif quantity == 'magnetic axis':
         plot_params['title'] = fr'$\text{{Magnetic axis}}$'
     else:
-        plot_params['title'] = fr'${params.attrs_label_dict[quantity]} \ \text{{at flux surface }} \rho={rho_curr}$'
+        plot_params['title'] = fr'${params.attrs_dict[quantity]['label']} \ \text{{at flux surface }} \rho={rho_curr:.3f}$'
 
     plot_params['colorbar'] = dict(
         lenmode = 'pixels',
@@ -208,3 +204,36 @@ def compute_3dplot_params(eq_index,quantity, rho_index, params):
     return plot_params
 
 
+
+
+
+
+# def plotly_plot_2dsurf_const_phi(xdata,ydata,zdata, quantity, phi_index, eq_NFP, params):
+#     fig = go.Figure(data=[
+#                     go.Surface(
+#                         x=xdata,
+#                         y=ydata,
+#                         z=np.zeros_like(zdata),  
+#                         surfacecolor=zdata,      
+#                         showscale=True
+#                     )
+#         ])
+#     phi_curr = round(2*np.pi/(params.surf2d_num_phi*eq_NFP) * phi_index,3)
+
+#     label = params.attrs_dict[quantity]['label']
+#     title=fr'${label} \ \text{{at toroidal angle }} \phi={phi_curr:.3f}\pi$'
+#     fig.update_layout(
+#         scene_camera=dict(eye=dict(x=0., y=0., z=2.)),
+#         scene_dragmode=False,  
+#         scene=dict(
+#             xaxis=dict(showgrid=False),
+#             yaxis=dict(showgrid=False),
+#             zaxis=dict(visible=False)
+#         ),
+#         title={
+#             'text': title,
+#             'x': 0.5,
+#             'y': 0.85,
+#         },
+#     )
+#     return plot_theme(fig)
