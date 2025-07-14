@@ -1,26 +1,45 @@
 from dataclasses import dataclass, field
-from desc.equilibrium import Equilibrium
 from desc.grid import LinearGrid
+import plottable as pl
 
 @dataclass
 class viz_params:
-    attrs_scalars = ['a', 'R0', 'R0/a','<beta>_vol','<|grad(p)|>_vol', '<|F|>_vol'] 
-    attrs_profiles= ['iota','<|B|>', '<J*B>', 'p', 'q']
-    attrs_2d = ['J^rho', 'B^theta', 'sqrt(g)', '|B|']
-    attrs_3d = ['1', 'J^rho', 'B^theta', 'sqrt(g)', '|B|'] #'1' used to plot the flux surface shapes
-    attrs = attrs_scalars + attrs_profiles + attrs_2d + attrs_3d ## Contains duplicates
+
+    #### Various lists which will be filled out after instantiation
+    attrs_scalars: list = field(default_factory = list)
+    attrs_profiles: list = field(default_factory = list)
+    attrs_2d: list = field(default_factory = list)
+    attrs_3d: list = field(default_factory = list) 
+    attrs_mag_axis: list = field(default_factory = list) 
+
     attrs_dict: dict = field(default_factory = dict)
+
+    meshes_loaded: list = field(default_factory = list)
+    cached_figures: dict = field(default_factory = dict)
+
+    #### Paths to the folders which contain the base DESC output and 
+    #### preprocessed files, respectively
+    base_desc_path: str = "equilibria/base_desc_outputs"
+    pp_desc_path: str = "equilibria/preprocessed_desc_outputs"
+
+    #### Listing of the files contained in the above folder
+    base_desc_filelist: list = field(default_factory = list)
+
+    #### Lists of Equilibria objects and names for referring to them
+    eq_loaded: list = field(default_factory = list) ## list of Equilbrium objects
+    pp_eq_loaded: list = field(default_factory = list) ## list of dictionaries, one per Equilibrium object
+    eq_names_list: list = field(default_factory = list) ## for displaying on the dropdown
+
 
     #### Quantities used for 1D profiles
     grid_profiles = LinearGrid(20,0,0,1)
 
-    #### Quantities used for flux surfaces
+    #### Quantities used for 2D flux surfaces
     fx_num_rho = 8
     fx_num_theta = 8
     fx_num_phi = 12
 
     #### Quantities used for 2D plots
-    
     grid_const_rho_args = {
         "sym": False,
         "axis": False,
@@ -39,26 +58,17 @@ class viz_params:
         "endpoint": True
     }
     surf3d_num_rho = 6
-
-    attrs_mag_axis = ['curvature','torsion'] ## Will automatically compute and display (x,y,z) coordinates, so no need to include
     
 
 
 
-    #### Paths to the folders which contain the base DESC output and 
-    #### preprocessed files, respectively
-    base_desc_path: str = "equilibria/base_desc_outputs"
-    pp_desc_path: str = "equilibria/preprocessed_desc_outputs"
-
-    #### Listing of the files contained in the above folder
-    base_desc_filelist: list = field(default_factory = list)
-
-    #### Lists of Equilibria objects and names for referring to them
-    eq_loaded: list = field(default_factory = list) ## list of Equilbrium objects
-    pp_eq_loaded: list = field(default_factory = list) ## list of dictionaries, one per Equilibrium object
-    eq_names_list: list = field(default_factory = list) ## for displaying on the dropdown
-
-
+    ## Loading in quantities for plotting. see plottable.py
+    def __post_init__(self):
+       self.attrs_scalars = pl.attrs_scalars
+       self.attrs_profiles = pl.attrs_profiles
+       self.attrs_2d = pl.attrs_2d
+       self.attrs_3d = ['1'] + pl.attrs_3d ## Adding in variable corresponding to flux surfaces
+       self.attrs_mag_axis = pl.attrs_mag_axis
 
     
     

@@ -4,7 +4,7 @@
 -- Fill out the quantities which can be plotted in params.py (*Low Priority*)
 -- Add magnetic field lines on 2D const. rho plots
 -- On 2D const rho plots, add option to see density heatmap vs contours. Or add contours to the heatmap? 
--- Hover text over the entries in the table should tell you what the variable means, and units
+
 -- For the flux surfaces, make the grid lines constant as slider varies. 
 -- Why is iota (and q) negative?
 
@@ -12,22 +12,25 @@
 ##############################
 -- Basics: design
 ##############################
--- All the formatting for table in tab 1
+
+-- Mix of underscores and dashes. Decide on one.
 -- Font sizes for plots
 -- Plot titles + axes labels
 -- Graphs in "Cross sections tab." Replace with a single row element containing the graphs so alignment is automatic.
 -- Flux surfaces: find better colors, and more helpful things to show.  Also do you need to show the grid lines? 
 -- Add units to all labels. 
--- Figure out how they plot the 2D, constant phi heatmaps in DESC. Improve our plots
--- For QS, need to allow user to specify helicity 
+
+-- QS tab
+
+-- Replace global params object with a dcc.Store 
     
 
 
 ##############################
 -- Performance  
 ##############################
--- If the 3D plots are taking up most of the memory, then you shouldn't store the same mesh over and 
-   over again. Instead, just store the color map for each quantity, and build when the user loads.
+-- Add "submit" buttons to allow user to decide. 
+-- Add async support so UI remains responsive 
 
 -- See how memory and app loading time behave with more saved equilibria. 
     -- If loading time is a problem, add dropdown with checkmarks for which equilibria the user wants loaded.
@@ -36,9 +39,8 @@
 ##############################
 -- Overall program logic/design
 ##############################
--- Check if the bulk of time required to build graph is due to desc computing the data, or actual graph building. 
-   -- If former, store data arrays (as .h5 files) rather than building plotly graph first.
--- The preprocess script does not need separate functions for computing each type of quantity.
+
+-- The preprocess script is unwieldly 
 
 
 ##############################

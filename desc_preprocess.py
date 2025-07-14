@@ -1,19 +1,18 @@
 import desc
-import copy
 import os
-import gzip, json
+import time 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-import plotly
-from plotly_plotting import *
-import plotly.graph_objects as go
-from desc.equilibrium import Equilibrium, EquilibriaFamily
+import h5py
+from desc.equilibrium import EquilibriaFamily
 from desc.grid import LinearGrid
 from desc.plotting import plot_surfaces, plot_2d, plot_section, plot_3d
 from desc.compute.utils import _parse_parameterization
 from desc.compute import data_index
 from scipy.interpolate import griddata
+import plotly
+
+import plotly_plotting as pplotting
 
 from params import viz_params
 
@@ -26,21 +25,207 @@ def precompute():
     params = viz_params()
     paths_list(params)
     num_eq = len(params.eq_loaded)
+
     if num_eq == 0:
         print("No equilibria to preprocess")
         return
     else:
         print(f"{num_eq} equilibria to preprocess")
         build_attrs_dict(params)
+
+        ## Iterate over equilibria which need to be processed
         for i in range(0, len(params.eq_loaded)):
-            data_array = compute_quantities(i,params)
-            figure_list_fluxsurf = compute_fluxsurfaces(i, params)
-            figure_list_2dplots_const_rho = compute_2dsurfaces_const_rho(i,params)
-            figure_list_2dplots_const_phi = compute_2dsurfaces_const_phi(i,params)
-            figure_list_3dplots = compute_3dsurfaces(i,params)
-            figure_list_magneticaxis = compute_magneticaxis(i,params)
-            figure_list = figure_list_fluxsurf + figure_list_2dplots_const_rho + figure_list_2dplots_const_phi + figure_list_3dplots + figure_list_magneticaxis
-            write_json(i,data_array,figure_list,params)
+            start_time = time.perf_counter()
+            eq = params.eq_loaded[i]
+            nfp = eq.NFP
+
+            dest_filename = os.path.join(params.pp_desc_path, 'pp_' + params.eq_names_list[i]+'.h5')
+            f = h5py.File(dest_filename, "w")
+            
+
+            gp_scalars = f.create_group("scalars")
+            for q in params.attrs_scalars:
+                computed = eq.compute(q)[q]
+                gp_scalars.attrs[q+'_scalar_'+'_value_'] = computed.astype(np.float32)
+                gp_scalars.attrs[q+'_scalar_'+'_label_'] = params.attrs_dict[q]['label']
+                gp_scalars.attrs[q+'_scalar_'+'_units_'] = params.attrs_dict[q]['units']
+                gp_scalars.attrs[q+'_scalar_'+'_description_'] = params.attrs_dict[q]['description']
+
+                
+
+            gp_1d = f.create_group("1d")
+            grid_profiles = params.grid_profiles
+            for q in params.attrs_profiles:
+                computed = eq.compute(q, grid_profiles)[q]
+                dset_1d = gp_1d.create_dataset(q+"_1d_", data=computed.astype(np.float32), compression='gzip' )
+                #dset_1d.attrs['name'] = q+"1d"
+                dset_1d.attrs['_label_'] = params.attrs_dict[q]['label']
+                dset_1d.attrs['_units_'] = params.attrs_dict[q]['units']
+                dset_1d.attrs['_description_'] = params.attrs_dict[q]['description']
+
+            
+            gp_2d = f.create_group("2d")
+            fig, _, data = plot_surfaces(
+                                eq, rho = params.fx_num_rho, theta = params.fx_num_theta,
+                                phi = params.fx_num_phi, return_data = True
+                            )
+            plt.close(fig) 
+            subgp_2dflux = gp_2d.create_group("fluxsurfaces_2d_")
+            for j in range(0,params.fx_num_phi):
+                xdata1 = data['rho_R_coords'][:,:,j]
+                ydata1 = data['rho_Z_coords'][:,:,j]
+                xdata2 = data['vartheta_R_coords'][:,:,j].T
+                ydata2 = data['vartheta_Z_coords'][:,:,j].T
+
+                dset_2dflux_A = subgp_2dflux.create_dataset("rho_R"+"fluxsurfaces_2d_"+ rf"{j}/{params.fx_num_phi-1}", data=xdata1.astype(np.float32), compression='gzip')
+                dset_2dflux_A.attrs['label'] = "Flux surface"
+                dset_2dflux_A.attrs['phi_curr'] = np.round(2*j/(params.fx_num_phi*nfp),3)
+
+                dset_2dflux_B = subgp_2dflux.create_dataset("rho_Z"+"fluxsurfaces_2d_"+ rf"{j}/{params.fx_num_phi-1}", data=ydata1.astype(np.float32), compression='gzip')
+                dset_2dflux_B.attrs['label'] = "Flux surface"
+                dset_2dflux_B.attrs['phi_curr'] = np.round(2*j/(params.fx_num_phi*nfp),3)
+
+                dset_2dflux_C = subgp_2dflux.create_dataset("vartheta_R"+"fluxsurfaces_2d_"+ rf"{j}/{params.fx_num_phi-1}", data=xdata2.astype(np.float32), compression='gzip')
+                dset_2dflux_C.attrs['label'] = "Flux surface"
+                dset_2dflux_C.attrs['phi_curr'] = np.round(2*j/(params.fx_num_phi*nfp),3)
+
+                dset_2dflux_D = subgp_2dflux.create_dataset("vartheta_Z"+"fluxsurfaces_2d_"+ rf"{j}/{params.fx_num_phi-1}", data=ydata2.astype(np.float32), compression='gzip')
+                dset_2dflux_D.attrs['label'] = "Flux surface"
+                dset_2dflux_D.attrs['phi_curr'] = np.round(2*j/(params.fx_num_phi*nfp),3)
+
+                if j==0:
+                    fig = pplotting.plotly_plot_fluxsurf(xdata1,ydata1,xdata2,ydata2,0,params)
+                    f.create_dataset('cached_fluxsurfaces_2d_', data = plotly.io.to_json(fig))
+
+
+            params.grid_const_rho_args['NFP'] = nfp
+            rho_grid = np.linspace(0,1,params.surf2d_num_rho+1)
+            subgp_2d_constrho = gp_2d.create_group("constrho_2d_")
+            subgp_2d_constphi = gp_2d.create_group("constphi_2d_")
+
+            ## Will want LCFS data for the constant phi plots
+            subgp_2d_constphi_LCFS = gp_2d.create_group("constphi_2d_LCFS_")
+            fig,_,data = plot_surfaces(eq, rho=[1.0], phi=params.surf2d_num_phi, return_data=True)
+            plt.close(fig)
+            for j in range(0,params.surf2d_num_phi):
+                outerflux_xdata = data['rho_R_coords'][:,0,j]
+                outerflux_ydata = data['rho_Z_coords'][:,0,j]
+                data_LCFS = [outerflux_xdata.astype(np.float32), outerflux_ydata.astype(np.float32)]
+                dset_2dconstphi_LCFS = subgp_2d_constphi_LCFS.create_dataset("constphi_2d_LCFS_" + rf"{j}/{params.surf2d_num_phi - 1}", data=data_LCFS, compression='gzip')
+                dset_2dconstphi_LCFS.attrs['_phi_curr_'] = round(2/(params.surf2d_num_phi*nfp) * j,3)
+
+
+            ## Now on to main 2D plot data
+            for q in params.attrs_2d:
+                ## First, constant rho
+                for j in range(0,params.surf2d_num_rho+1):
+                    params.grid_const_rho_args['rho'] = np.array([rho_grid[j]])
+                    grid = LinearGrid(**params.grid_const_rho_args)
+
+                    try:
+                        fig,_,data = plot_2d(eq, q, grid = grid, return_data=True)
+                        data = data[q]
+                        plt.close(fig)
+                    except:
+                        data=np.array([0.0]) ## trivial data 
+                    
+                    dset_2dconstrho = subgp_2d_constrho.create_dataset(q+"constrho_2d_"+rf"{j}/{params.surf2d_num_rho}", data=data.astype(np.float32), compression='gzip')
+                    dset_2dconstrho.attrs['_label_'] = params.attrs_dict[q]['label']
+                    dset_2dconstrho.attrs['_units_'] = params.attrs_dict[q]['units']
+                    dset_2dconstrho.attrs['_description_'] = params.attrs_dict[q]['description']
+                    dset_2dconstrho.attrs['_rho_curr_'] = round(1/params.surf2d_num_rho * j,3)
+
+                    if q == params.attrs_2d[0] and j == params.surf2d_num_rho:
+                        fig = pplotting.plotly_plot_2dsurf_const_rho(data,params.attrs_dict[q]['label'], 1, params)
+                        f.create_dataset('cached_constrho_2d_', data = plotly.io.to_json(fig))
+
+
+                ## Next, constant phi
+                fig,_,data = plot_section(eq, q, phi = params.surf2d_num_phi, return_data=True)
+                plt.close(fig)
+                
+
+                for j in range(0,params.surf2d_num_phi):
+                    xdata = data['R'][:,:,j].flatten()
+                    ydata = data['Z'][:,:,j].flatten()
+                    zdata = data[q][:,:,j].flatten()
+
+                    xlow, xhigh = min(xdata), max(xdata)
+                    ylow, yhigh = min(ydata), max(ydata)
+
+                    xtarget = np.linspace(xlow,xhigh,100)
+                    ytarget = np.linspace(ylow, yhigh,100)
+                    targetX, targetY = np.meshgrid(xtarget, ytarget)
+
+                    targetZ = griddata((xdata,ydata), zdata, (targetX, targetY) , method='linear')
+
+                
+                    data_2d_ = [targetX.astype(np.float32), targetY.astype(np.float32), targetZ.astype(np.float32)]
+
+                    dset_constphi_2d_ = subgp_2d_constphi.create_dataset(q+"constphi_2d_" + rf"{j}/{params.surf2d_num_phi - 1}", data=data_2d_, compression='gzip')
+                    dset_constphi_2d_.attrs['_label_'] = params.attrs_dict[q]['label']
+                    dset_constphi_2d_.attrs['_units_'] = params.attrs_dict[q]['units']
+                    dset_constphi_2d_.attrs['_description_'] = params.attrs_dict[q]['description']
+                    dset_constphi_2d_.attrs['_phi_curr_'] =  round(2/(params.surf2d_num_phi*nfp) * j,3)
+                
+
+                
+
+            gp_3d = f.create_group("3d")
+
+            ## First, magnetic axis
+            subgp_3d_magaxis = gp_3d.create_group("magaxis_3d_")
+            n = 2*eq.NFP + 40
+            grid = LinearGrid(N=n)
+            axis = eq.get_axis()
+
+            def wrap_around(arr):
+                assert len(arr) != 0 
+                return np.append(arr, [arr[0]])
+    
+            curve_data = [wrap_around(np.array(axis.compute(q, grid=grid)[q])).astype(np.float32) for q in ['X', 'Y', 'Z']+params.attrs_mag_axis]
+            hovertemplate = '(x,y,z): (%{customdata[0]:.3f}, %{customdata[1]:.3f}, %{customdata[2]:.3f})<br>'
+            for j in range(0,len(params.attrs_mag_axis)):
+                hovertemplate += params.attrs_mag_axis[j] + ': %{' + f'customdata[{3+j}]' + ':.3f}' + '<br>'
+            hovertemplate += '<extra></extra>'
+            dset_3d_magaxis = subgp_3d_magaxis.create_dataset("magaxis_3d_", data=curve_data, compression='gzip')
+            dset_3d_magaxis.attrs['hovertemplate'] = hovertemplate
+
+            
+            ## Next, the main 3D mesh + data
+            subgp_3d_mesh = gp_3d.create_group("mesh_3d_")
+            subgp_3d_constrho = gp_3d.create_group("constrho_3d_")
+            params.grid_3d_args['N'] = int(50 * nfp)
+            rho_grid = np.linspace(0,1,params.surf3d_num_rho+1)
+            for q in params.attrs_3d:
+                for j in range(1,params.surf3d_num_rho+1): ## Won't evaluate rho=0, i.e. the axis
+                    params.grid_3d_args['rho'] = np.array([rho_grid[j]])
+                    grid = LinearGrid(**params.grid_3d_args)
+                    fig,data_3d_ = plot_3d(eq, q, grid=grid, return_data=True)
+
+                    if q == '1': ## Only store the mesh once
+                        data_mesh_3d_ = [data_3d_['X'].astype(np.float32), data_3d_['Y'].astype(np.float32), data_3d_['Z'].astype(np.float32)]
+                        dset_mesh_3d_ = subgp_3d_mesh.create_dataset("mesh_3d_" + rf"{j}/{params.surf3d_num_rho}", data=data_mesh_3d_, compression='gzip')
+                        dset_mesh_3d_.attrs['_rho_curr_'] = round(1/params.surf3d_num_rho * j,3)
+
+                        if j == params.surf3d_num_rho:
+                            fig = pplotting.plotly_plot_3dsurf(data_3d_[q], data_mesh_3d_, i, '1', params.surf3d_num_rho, params, 
+                                                               label_in = params.attrs_dict[q]['label'], units_in = params.attrs_dict[q]['units'])
+                            f.create_dataset('cached_fluxsurfaces_3d_', data = plotly.io.to_json(fig))
+
+                    dset_3d_constrho_ = subgp_3d_constrho.create_dataset(q+"constrho_3d_"+rf"{j}/{params.surf3d_num_rho}", data=data_3d_[q].astype(np.float32), compression='gzip')
+                    dset_3d_constrho_.attrs['_label_'] = params.attrs_dict[q]['label']
+                    dset_3d_constrho_.attrs['_units_'] = params.attrs_dict[q]['units']
+                    dset_3d_constrho_.attrs['_description_'] = params.attrs_dict[q]['description']
+                    dset_3d_constrho_.attrs['_rho_curr_'] = round(1/params.surf3d_num_rho * j,3)
+            
+            
+
+
+            ## Conclude
+            end_time = time.perf_counter()
+            tot_time = end_time - start_time
+            print(f"Equilibrium {i+1} took {tot_time:.3f} seconds to process")
 
 
 def paths_list(params):
@@ -50,9 +235,8 @@ def paths_list(params):
             visible_files.append(item)
 
     for item in visible_files:
-        if not os.path.exists(os.path.join(params.pp_desc_path, 'pp_'+item.removesuffix('.h5') + '.json')):
+        if not os.path.exists(os.path.join(params.pp_desc_path, 'pp_'+item)):
             input_path = os.path.join(params.base_desc_path,item)
-            print(input_path)
             eq = desc.io.load(input_path)
             if isinstance(eq, EquilibriaFamily): ## If an equilibrium family, only take the final entry
                 eq = eq[-1]
@@ -61,213 +245,12 @@ def paths_list(params):
             params.eq_names_list.append(item.removesuffix('.h5'))
 
 
-def compute_quantities(eq_index, params):
-    eq = params.eq_loaded[eq_index]
-    data_array_scalars = []
-    for q in params.attrs_scalars:
-        computed = eq.compute(q)[q]
-        data_array_scalars.append(computed.tolist())
-    data_array_profiles=[] 
-    grid_profiles = params.grid_profiles
-    for q in params.attrs_profiles:
-        computed = eq.compute(q, grid_profiles)[q]
-        data_array_profiles.append(computed.tolist())
-    return [data_array_scalars, data_array_profiles]
-
-
-
-
-
-
-def compute_fluxsurfaces(eq_index, params):
-    eq = params.eq_loaded[eq_index]
-
-    fig0, _, data = plot_surfaces(eq, rho = params.fx_num_rho, theta = params.fx_num_theta ,phi = params.fx_num_phi, return_data = True)
-    plt.close(fig0)
-
-    fig_list_json = []
-    for i in range(0,params.fx_num_phi):
-        xdata1 = data['rho_R_coords'][:,:,i]
-        ydata1 = data['rho_Z_coords'][:,:,i]
-        xdata2 = data['vartheta_R_coords'][:,:,i].T
-        ydata2 = data['vartheta_Z_coords'][:,:,i].T
-        fig_list_json.append(plotly.io.to_json(plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, i, eq.NFP, params)))
-
-    return [fig_list_json]  
-
-def compute_2dsurfaces_const_rho(eq_index,params): ## computes for a fixed equilibrium, across all 2d attributes
-    eq = params.eq_loaded[eq_index]
-    params.grid_const_rho_args['NFP'] = eq.NFP
-    rho_grid = np.linspace(0,1,params.surf2d_num_rho+1)
-    fig_list_json_A = []
-    for q in params.attrs_2d:
-        fig_list_json_B = []
-        for i in range(0,params.surf2d_num_rho+1):
-            params.grid_const_rho_args['rho'] = np.array([rho_grid[i]])
-            grid = LinearGrid(**params.grid_const_rho_args)
-
-            try:
-                fig,_,data = plot_2d(eq, q, grid = grid, return_data=True)
-                data = data[q]
-                plt.close(fig)
-            except:
-                data=None
-
-            fig_list_json_B.append(plotly.io.to_json(plotly_plot_2dsurf_const_rho(data, q, i, params)))
-        fig_list_json_A.append(fig_list_json_B)
-    return fig_list_json_A
-
-
-
-def compute_2dsurfaces_const_phi(eq_index,params):
-    eq = params.eq_loaded[eq_index]
-    fig_list_json_A = []
-    for q in params.attrs_2d:
-        fig_list_json_B = []
-        try:
-            fig,_,data = plot_section(eq, q, phi = params.surf2d_num_phi, return_data=True)
-            fig1,_,data1 = plot_surfaces(eq, rho=[1.0], phi=params.surf2d_num_phi, return_data=True)
-            plt.close(fig)
-            plt.close(fig1)
-
-            for i in range(0,params.surf2d_num_phi):
-                xdata = data['R'][:,:,i].flatten()
-                ydata = data['Z'][:,:,i].flatten()
-                zdata = data[q][:,:,i].flatten()
-
-                xlow, xhigh = min(xdata), max(xdata)
-                ylow, yhigh = min(ydata), max(ydata)
-
-                xtarget = np.linspace(xlow,xhigh,100)
-                ytarget = np.linspace(ylow, yhigh,100)
-                targetX, targetY = np.meshgrid(xtarget, ytarget)
-
-                ztarget = griddata((xdata,ydata), zdata, (targetX, targetY) , method='linear')
-
-                outerflux_xdata = data1['rho_R_coords'][:,0,i]
-                outerflux_ydata = data1['rho_Z_coords'][:,0,i]
-
-                fig_list_json_B.append(plotly.io.to_json(plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outerflux_ydata, q,i, eq.NFP, params)))
-        except:
-            for i in range(0,params.surf2d_num_phi):
-                fig_empty = go.Figure()
-                fig_list_json_B.append(plotly.io.to_json(fig_empty))
-
-        fig_list_json_A.append(fig_list_json_B)
-
-    return fig_list_json_A
-
-
-
-# def compute_2dsurfaces_const_phi(eq_index,params):
-#     eq = params.eq_loaded[eq_index]
-
-#     fig_list_json_A = []
-#     for q in params.attrs_2d:
-#         fig_list_json_B = []
-
-#         try:
-#             fig,_,data = plot_section(eq,q, phi = params.surf2d_num_phi, return_data=True)
-#             plt.close(fig)
-#             for i in range(0,params.surf2d_num_phi):
-#                 xdata = data['R'][:,:,i]
-#                 ydata = data['Z'][:,:,i]
-#                 zdata = data[q][:,:,i]
-#                 fig_list_json_B.append(plotly.io.to_json(plotly_plot_2dsurf_const_phi(xdata,ydata,zdata,q,i, eq.NFP, params)))
-#         except:
-#             for i in range(0,params.surf2d_num_phi):
-#                 fig_empty = go.Figure()
-#                 fig_list_json_B.append(plotly.io.to_json(fig_empty))
-
-#         fig_list_json_A.append(fig_list_json_B)
-
-#     return fig_list_json_A
-
-    
-def compute_3dsurfaces(eq_index,params):
-    eq = params.eq_loaded[eq_index]
-    params.grid_3d_args['N'] = int(50 * eq.NFP)
-
-    rho_grid = np.linspace(0,1,params.surf3d_num_rho+1)
-
-    fig_list_json_A = []
-    for q in params.attrs_3d:
-        fig_list_json_B = []
-        for i in range(1,params.surf3d_num_rho+1): ## Won't evaluate rho=0, i.e. the axis
-            params.grid_3d_args['rho'] = np.array([rho_grid[i]])
-            grid = LinearGrid(**params.grid_3d_args)
-
-            try:
-                fig = plotly_plot_3dsurf(plot_3d(eq, q, grid=grid), eq_index, q, i, params)
-            except:
-                fig = go.Figure()
-
-
-            fig_list_json_B.append(plotly.io.to_json(fig))
-
-        fig_list_json_A.append(fig_list_json_B)
-
-    return fig_list_json_A
-
-
-def compute_magneticaxis(eq_index,params):
-    eq = params.eq_loaded[eq_index]
-    n = 2*eq.NFP + 40
-    grid = LinearGrid(N=n)
-    axis = eq.get_axis()
-
-    def wrap_around(arr):
-        assert len(arr) != 0 
-        return np.append(arr, [arr[0]])
-    
-    curve_data = {q:wrap_around(np.array(axis.compute(q, grid=grid)[q])) for q in ['X', 'Y', 'Z']+params.attrs_mag_axis}
-    df = pd.DataFrame(curve_data)
-
-    fig=go.Figure(data=[go.Scatter3d(x=curve_data['X'],y=curve_data['Y'],z=curve_data['Z'], mode='lines')])
-
-    
-    
-    hovertemplate = '(x,y,z): (%{customdata[0]:.3f}, %{customdata[1]:.3f}, %{customdata[2]:.3f})<br>'
-    for i in range(0,len(params.attrs_mag_axis)):
-        hovertemplate += params.attrs_mag_axis[i] + ': %{' + f'customdata[{3+i}]' + ':.3f}' + '<br>'
-    hovertemplate += '<extra></extra>'
-
-    fig.update_traces(
-        customdata=df,
-        hovertemplate = hovertemplate
-    )
-
-    plot_params = compute_3dplot_params(eq_index, 'magnetic axis', 0, params)
-    fig.update_layout(title={'text': plot_params['title'], 'x': 0.45, 'y': 0.9})
-    fig.update_layout(scene = plot_params['scene'], autosize=False, width= plot_params['width'], height=plot_params['height'],
-                      scene_camera = plot_params['scene_camera'])
-    fig.update_layout(scene = {'xaxis_title': 'X (m)', 'yaxis_title': 'Y (m)', 'zaxis_title': 'Z (m)'})
-
-    fig.update_layout(scene=dict(
-        xaxis=dict(showbackground=True, showgrid=True, backgroundcolor='#2c3034',gridcolor='lightgray',color='white',zeroline=False),
-        yaxis=dict(showbackground=True, showgrid=True, backgroundcolor='#2c3034',gridcolor='lightgray',color='white',zeroline=False),
-        zaxis=dict(showbackground=True, showgrid=True, backgroundcolor='#2c3034',gridcolor='lightgray',color='white',zeroline=False)
-        )
-    )
-
-    return [plotly.io.to_json(plot_theme(fig))]
-
-
-
-
-
-
-def write_json(eq_index, data_array, figure_list, params):
-    dest_filename = os.path.join(params.pp_desc_path, 'pp_' + params.eq_names_list[eq_index]+'.json')
-    data_collected = [params.attrs_dict, data_array, figure_list]
-    with gzip.open(dest_filename, 'wt') as f:
-         json.dump(data_collected,f)
-
 def build_attrs_dict(params):
     p = _parse_parameterization(params.eq_loaded[0])
 
     copy_keys = ['label', 'units', 'description']
-    for q in params.attrs:
+    attrs = params.attrs_scalars + params.attrs_profiles + params.attrs_2d + params.attrs_3d
+    for q in attrs:
         if q not in params.attrs_dict and q != '1':
             params.attrs_dict[q] = {r: data_index[p][q][r] for r in copy_keys}
         elif q == '1':

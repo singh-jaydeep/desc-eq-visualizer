@@ -1,12 +1,11 @@
-import plotly.express as px
 import plotly.graph_objects as go
-import plotly
 from desc.plotting import plot_surfaces
+from desc.equilibrium.equilibrium import EquilibriaFamily
 import numpy as np
+import pandas as pd
 
-def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_index, eq_NFP, params): 
+def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params): 
             ## takes in the R, Z data at constant phi, returns figure
-
     fig = go.Figure()
     for i in range(0,params.fx_num_rho):
         fig.add_trace(go.Scatter(x=xdata1[:,i], y= ydata1[:,i], 
@@ -25,9 +24,6 @@ def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_index, eq_NFP, para
                                     dash='dash'
                                 )))
         fig.update_traces(showlegend=False)
-    
-
-    phi_curr = np.round(2*phi_index/(params.fx_num_phi*eq_NFP),3)
 
     fig.update_layout(
         title={
@@ -63,19 +59,16 @@ def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_index, eq_NFP, para
     
 
 
-def plotly_plot_2dsurf_const_rho(data, quantity, rho_index, params):
+def plotly_plot_2dsurf_const_rho(data, label, rho_curr, params):
     fig = go.Figure()
-    ############
-    # FIX #
+
     numtheta = 2*params.grid_const_rho_args["M"]+1
     numzeta = 2*params.grid_const_rho_args["N"]+1
     thetadata = np.linspace(0,2*3.14159, numtheta)
     zetadata = np.linspace(0, 2*3.14159, numzeta)
-    ############
+
     fig.add_heatmap(autocolorscale=False, colorscale='plasma', y=thetadata, x=zetadata, z=data) ## Check order
 
-    rho_curr = round(1/params.surf2d_num_rho * rho_index,3)
-    label = params.attrs_dict[quantity]['label']
     title = fr'${label} \ \text{{at flux surface }} \rho={rho_curr:.3f}$'
 
     fig.update_layout(
@@ -113,7 +106,10 @@ def plotly_plot_2dsurf_const_rho(data, quantity, rho_index, params):
 
 
 
-def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outerflux_ydata, quantity, phi_index, eq_NFP, params):
+def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outerflux_ydata, phi_curr, label, params):
+    xtarget = xtarget[0,:]
+    ytarget = ytarget[:,0]
+
     fig = go.Figure(go.Heatmap(x=xtarget, y=ytarget, z= ztarget, colorscale='Viridis'))
     fig.add_trace(go.Scatter(
         x = outerflux_xdata,
@@ -121,8 +117,6 @@ def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outer
         mode='lines',
         line=dict(color='black', width=2)
     ))
-    phi_curr = round(2*np.pi/(params.surf2d_num_phi*eq_NFP) * phi_index,3)
-    label = params.attrs_dict[quantity]['label']
     title=fr'${label} \ \text{{at toroidal angle }} \phi={phi_curr:.3f}\pi$'
     fig.update_layout(
         title={
@@ -135,16 +129,84 @@ def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outer
 
 
 
-def plotly_plot_3dsurf(fig, eq_index, quantity, rho_index, params):
-    plot_params = compute_3dplot_params(eq_index, quantity, rho_index, params)
-    fig.data[0].update(colorbar=plot_params['colorbar'])
+def plotly_plot_3dmagax(eq_index,curve_data, hovertemplate, params):
+    attrs_list = ['X','Y','Z'] + params.attrs_mag_axis
+    df = pd.DataFrame({attrs_list[i]: curve_data[i] for i in range(0,len(attrs_list))})
+
+    fig=go.Figure(data=[go.Scatter3d(x=curve_data[0],y=curve_data[1],z=curve_data[2], mode='lines')])
+
+    fig.update_traces(
+        customdata=df,
+        hovertemplate = hovertemplate
+    )
+
+    plot_params = compute_3dplot_params(eq_index, params)
+    fig.update_layout(title={'text': fr'$\text{{Magnetic axis}}$', 'x': 0.5, 'y': 0.9})
+    fig.update_layout(scene = plot_params['scene'], 
+                      autosize=False, 
+                      width= plot_params['width'], 
+                      height=plot_params['height'],
+                      scene_camera = plot_params['scene_camera']
+                      )
+    fig.update_layout(scene = {'xaxis_title': 'X (m)', 'yaxis_title': 'Y (m)', 'zaxis_title': 'Z (m)'})
+
+
+    return plot_theme(fig)
+
+
+
+def plotly_plot_3dsurf(color_data, mesh_data, eq_index, quantity, rho_index, params, label_in=None, units_in=None):
     
-    fig.update_layout(title={'text': plot_params['title'], 'x': 0.45, 'y': 0.9})
-    fig.update_layout(scene = plot_params['scene'], autosize=False, width= plot_params['width'], height=plot_params['height'],
+    if label_in != None:
+         label = label_in
+    else:
+         label = color_data.attrs['_label_']
+    
+    if units_in != None:
+         units = units_in
+    else: 
+         units=color_data.attrs['_units_']
+
+    plot_params = compute_3dplot_params(eq_index, params)
+    rho_curr = round(1/params.surf3d_num_rho * rho_index,3)
+    colorbartitle = rf'${label} \ \ ({units})$'
+    title = fr'${label} \ \text{{at flux surface }} \rho={rho_curr:.3f}$'
+    if quantity=='1':
+        title=fr'$\text{{Flux surface at }} \rho={rho_curr:.3f}$'
+
+
+    fig = go.Figure(
+        data=go.Surface(
+            x=mesh_data[0][:,0,:],         
+            y=mesh_data[1][:,0,:],         
+            z=mesh_data[2][:,0,:],         
+            surfacecolor=color_data[:][:,0,:],     
+            colorscale='Viridis',  
+            colorbar=dict(lenmode = 'pixels',
+                          len=400)
+        )
+    )
+
+    fig.update_layout(title={'text': title})
+    fig.update_layout(scene = plot_params['scene'], 
+                      autosize=False, 
+                      width= plot_params['width'], 
+                      height=plot_params['height'],
                       scene_camera = plot_params['scene_camera'])
+    fig.update_layout(scene = {'xaxis_title': 'X (m)', 'yaxis_title': 'Y (m)', 'zaxis_title': 'Z (m)'})
+    fig.update_layout(title_x=.5, title_y=.9)
+
     
     if quantity == '1':
         fig.update_traces(opacity=.4, showscale=False)
+    else:
+        fig.add_annotation(
+            text=colorbartitle,
+            showarrow=False,
+            xref="paper", yref="paper",
+            x=1.0, y=1.11,  
+            xanchor="left", yanchor="bottom"
+        )
 
 
     return plot_theme(fig)
@@ -169,22 +231,14 @@ def borderstyle():
 
 
 
-def compute_3dplot_params(eq_index,quantity, rho_index, params):
+def compute_3dplot_params(eq_index, params):
     eq = params.eq_loaded[eq_index]
+    if isinstance(eq, EquilibriaFamily): ## If an equilibrium family, only take the final entry
+                eq = eq[-1]
     plot_params = {}
-    rho_curr = round(1/params.surf3d_num_rho * rho_index,3)
 
-    if quantity == '1':
-        plot_params['title'] = fr'$\text{{Flux surface }} \rho={rho_curr:.3f}$'
-    elif quantity == 'magnetic axis':
-        plot_params['title'] = fr'$\text{{Magnetic axis}}$'
-    else:
-        plot_params['title'] = fr'${params.attrs_dict[quantity]['label']} \ \text{{at flux surface }} \rho={rho_curr:.3f}$'
 
-    plot_params['colorbar'] = dict(
-        lenmode = 'pixels',
-        len = 400
-    )
+    
     coord_r = eq.compute('R')['R']
     coord_z = eq.compute('Z')['Z']
     xyrange = 1.2*np.max(coord_r)
@@ -208,32 +262,4 @@ def compute_3dplot_params(eq_index,quantity, rho_index, params):
 
 
 
-# def plotly_plot_2dsurf_const_phi(xdata,ydata,zdata, quantity, phi_index, eq_NFP, params):
-#     fig = go.Figure(data=[
-#                     go.Surface(
-#                         x=xdata,
-#                         y=ydata,
-#                         z=np.zeros_like(zdata),  
-#                         surfacecolor=zdata,      
-#                         showscale=True
-#                     )
-#         ])
-#     phi_curr = round(2*np.pi/(params.surf2d_num_phi*eq_NFP) * phi_index,3)
 
-#     label = params.attrs_dict[quantity]['label']
-#     title=fr'${label} \ \text{{at toroidal angle }} \phi={phi_curr:.3f}\pi$'
-#     fig.update_layout(
-#         scene_camera=dict(eye=dict(x=0., y=0., z=2.)),
-#         scene_dragmode=False,  
-#         scene=dict(
-#             xaxis=dict(showgrid=False),
-#             yaxis=dict(showgrid=False),
-#             zaxis=dict(visible=False)
-#         ),
-#         title={
-#             'text': title,
-#             'x': 0.5,
-#             'y': 0.85,
-#         },
-#     )
-#     return plot_theme(fig)

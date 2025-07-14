@@ -298,3 +298,12 @@ def test_update_visible_trace(slider_val, eq_index, fig):
         elif q == '1':
             params.attrs_label_dict[q] = 'flux surfaces'
     '''
+
+
+## In app_components.py
+# fig.update_layout(scene=dict(
+    #     xaxis=dict(showbackground=True, showgrid=True, backgroundcolor='#2c3034',gridcolor='lightgray',color='white',zeroline=False),
+    #     yaxis=dict(showbackground=True, showgrid=True, backgroundcolor='#2c3034',gridcolor='lightgray',color='white',zeroline=False),
+    #     zaxis=dict(showbackground=True, showgrid=True, backgroundcolor='#2c3034',gridcolor='lightgray',color='white',zeroline=False)
+    #     )
+    # )

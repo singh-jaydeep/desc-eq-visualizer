@@ -1,23 +1,20 @@
-from dash import Dash, html, dash_table,dcc, callback, Output, Input, State
+from dash import html, dash_table,dcc, callback
 import dash_bootstrap_components as dbc
 import desc
-from desc.grid import LinearGrid
+
 from desc.compute import data_index
 from desc.compute.utils import _parse_parameterization
 from desc.equilibrium import Equilibrium
-import plotly
+
 import plotly.express as px
-import plotly.graph_objects as go
 import os 
 import h5py
 import pandas as pd
-import json
-import gzip
 import numpy as np
-from fractions import Fraction
-import pprint
 
-from plotly_plotting import plot_theme, borderstyle
+
+import plotly
+import plotly_plotting as pplotting
 
 #################################################
 # Global style things
@@ -38,7 +35,6 @@ def comp_title():
                             style ={
                                 'color': 'white',
                                 'fontSize': 25,
-                                #'font-weight': 'bold'
                             }
                     )
             )
@@ -46,12 +42,23 @@ def comp_title():
     return div
 
 
-## dropdown with list of equilibria
+## dropdown with list of equilibria, and selection button
 def comp_eq_dropdown(params):
+     
      indices = range(0,len(params.eq_names_list))
-     options={i: params.eq_names_list[i] for i in indices}
-     div = dbc.Row([
-                dbc.Col([
+     options={i: params.eq_names_list[i].removesuffix('.h5') for i in indices}
+
+     button = dbc.Col(
+                dbc.Button(
+                    "Submit",
+                    id="submit-eq-button",
+                    color="secondary",  # choose color: "secondary", "info", etc.
+                    className="me-1",
+                    n_clicks=0
+                ),
+                width=4
+            )
+     dropdown = dbc.Col([
                     dcc.Dropdown(
                         options=options,
                         id='main_dropdown',
@@ -61,7 +68,9 @@ def comp_eq_dropdown(params):
                                 }
                     )
                 ], className='justify-content-center', width=2)
-            ])
+     div = dbc.Row([dropdown,
+                    button])
+
      return div
 
 def comp_tabs(params):
@@ -88,11 +97,33 @@ def comp_tabs(params):
                         tab_id = 'tab4',
                         children=[comp_tab4(params)]
                     )
-                ], id="tabs", active_tab="tab2", style=dict(color="primary"))
+                ], id="tabs", active_tab="tab1", style=dict(color="primary"))
             ], width=12)
     ])
     return div
 
+
+#################################################
+# Prelims
+#################################################
+def load_meshes(eq_index,params):
+    with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
+            mesh_data = f['3d/mesh_3d_']
+            params.meshes_loaded = [mesh_data["mesh_3d_" + rf"{j}/{params.surf3d_num_rho}"][:] for j in range(1,params.surf3d_num_rho+1)]
+    
+def load_cached_figures(eq_index,params):
+    with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
+        params.cached_figures = {'fluxsurfaces_2d_': plotly.io.from_json(f['cached_fluxsurfaces_2d_'][()]),
+                                 'constrho_2d_': plotly.io.from_json(f['cached_constrho_2d_'][()]),
+                                 'fluxsurfaces_3d_': plotly.io.from_json(f['cached_fluxsurfaces_3d_'][()])
+                                  }
+        
+
+def reset_sliders(params):
+    return [0, params.surf2d_num_rho, params.surf3d_num_rho-1]
+
+def reset_dropdowns(params):
+    return [params.attrs_profiles[0], params.attrs_profiles[1], 'const_rho', params.attrs_2d[0], params.attrs_3d[0]]
 
 #################################################
 # Tab 1
@@ -107,7 +138,7 @@ def comp_tab1(params):
                                             {"name": "Parameter", "id": "Parameter"},
                                             {"name": "Value", "id": "Value"}
                                         ],
-                                        tooltip_data = hover_tooltip(params),
+                                        tooltip_data = None,
                                         tooltip_duration = None,
                                         style_table={
                                             'overflowX': 'auto',
@@ -148,29 +179,36 @@ def comp_tab1(params):
 
 ## Tab 1 update, triggered by callback 
 def update_table_stats(eq_index,params):
-    return to_dataframe(eq_index,params).to_dict('records')
+    with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
+        data_scalars = f['/scalars'] ## This is a group, with attributes corresponding to the values
+        
+        df_list=[]
+        hover_list=[]
+        for q in params.attrs_scalars:
+            val = data_scalars.attrs[q+'_scalar_'+'_value_']
+            if isinstance(val, (int, np.float32, np.float64)):
+                val = val.astype(float)
+            
+            val_str = ''
+            if isinstance(val, float) and abs(val) >= 1000:
+                val_str = f'{val:.3e}'
+            elif isinstance(val, float):
+                val_str = f'{val:.3f}'
+            else: 
+                val_str = str(val)
 
-## Convert data to dataframe for passing into table 
-def to_dataframe(eq_index,params):
-    dict_whole = params.pp_eq_loaded[eq_index]
-    dict_restrict = {key: dict_whole[key] for key in params.attrs_scalars}
-    df = pd.DataFrame([
-        {"Parameter": key, "Value": f"{value:.3e}" if isinstance(value, float) and abs(value) >= 1000 
-         else f"{value:.3f}" if isinstance(value, float) 
-         else str(value)}
-        for key, value in dict_restrict.items()
-    ])
 
-    return df
+            text = f'Quantity: {data_scalars.attrs[q+'_scalar_'+'_description_']}  \n Units: {data_scalars.attrs[q+'_scalar_'+'_units_']}'
+            df_list += [{'Parameter': q, 'Value': f'{val_str}'}]
+            hover_list += [{'Parameter': {'value': text, 'type': 'markdown'}, 'Value': None}]
+
+    df = pd.DataFrame(df_list)
+    return df.to_dict('records'), hover_list
 
     
-def hover_tooltip(params):
-    text = {q: f'Quantity: {params.attrs_dict[q]['description']}  \n Units: {params.attrs_dict[q]['units']}' for q in params.attrs_scalars}
 
-    hover_list = [{'Parameter': {'value': text[q], 'type': 'markdown'}, 'Value': None} 
-                   for q in params.attrs_scalars]
-    
-    return hover_list
+
+
 
 
 
@@ -230,7 +268,7 @@ def figure_1dprofiles_left():
                         dbc.Col(
                             html.Div(
                                 dcc.Graph(figure={}, id='fig_1dprofiles_left', mathjax=True),
-                                style=borderstyle()
+                                style=pplotting.borderstyle()
                             ), 
                         className = 'mb-3 align-items-center')])
     return fig_row_left
@@ -240,7 +278,7 @@ def figure_1dprofiles_right():
                         dbc.Col(
                             html.Div(
                                 dcc.Graph(figure={}, id='fig_1dprofiles_right', mathjax=True),
-                                style=borderstyle()
+                                style=pplotting.borderstyle()
                             ), 
                         className = 'mb-3 align-items-center')])
     return fig_row_right
@@ -249,23 +287,26 @@ def figure_1dprofiles_right():
 
 ## Tab 2 Update, triggered by callback 
 def update_figure_1dprofiles(eq_index,quantity,params):
-    data = params.pp_eq_loaded[eq_index][quantity]
-    rho_grid = params.grid_profiles.nodes[:,0]
-    df = pd.DataFrame(dict(
-        x=rho_grid,
-        y=data
-    ))
-    labels = {'x': r'$\rho$', 'y': ''}
-    fig = px.line(df, x='x', y='y', labels=labels)
-    title = fr'$\text{{Radial profile of }} {params.attrs_dict[quantity]['label']}$'
-    fig.update_layout(
-        title={
-            'text': title,
-            'x': 0.5,
-            'y': 0.93,
-        }
-    )
-    return plot_theme(fig)
+    with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
+        data= f[f'/1d/'+ quantity +'_1d_']
+
+        rho_grid = params.grid_profiles.nodes[:,0]
+        df = pd.DataFrame(dict(
+            x=rho_grid,
+            y=data[:]
+        ))
+        labels = {'x': r'$\rho$', 'y': ''}
+        fig = px.line(df, x='x', y='y', labels=labels)
+        title = fr'$\text{{Radial profile of }} {data.attrs['_label_']}$'
+        fig.update_layout(
+            title={
+                'text': title,
+                'x': 0.5,
+                'y': 0.93,
+            }
+        )
+        fig.update_layout(title_x=.5)
+    return pplotting.plot_theme(fig)
 
 
 
@@ -284,8 +325,8 @@ def comp_tab3(params):
 
 def panel_2d_left(params):
     col = dbc.Col([
-                    html.Div([figure_fluxsurf()], style={'margin-top':'60px'}),
-                    slider_fluxsurf()
+                    html.Div([figure_fluxsurf(params)], style={'margin-top':'60px'}),
+                    slider_fluxsurf(params)
                 ], width=5
                 )
     return col
@@ -315,25 +356,40 @@ def panel_2d_right(params):
     column = dbc.Col([
                 dbc.Row([selection_row1, selection_row2], justify='center'),
                 figure_2d(),
-                slider_2dprofiles()
+                slider_2dprofiles(params)
             ], className='mb-3', width=5
             )
     return column
 
-def figure_fluxsurf():
+def figure_fluxsurf(params):
     fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_fluxsurf', mathjax=True)],
-                            style=borderstyle())
+                            style=pplotting.borderstyle())
     column = dbc.Col(fig_display, 
                     className = 'mb-3')
     return column
 
 def update_figure_fluxsurf(eq_index,slider_val, params):
-    fig = params.pp_eq_loaded[eq_index]['flux_surfaces'][slider_val]
+    with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
+        data= f['/2d/fluxsurfaces_2d_']
+
+        xdata1= data['rho_R'+'fluxsurfaces_2d_'+ rf'{slider_val}/{params.fx_num_phi-1}']
+        ydata1= data['rho_Z'+'fluxsurfaces_2d_'+ rf'{slider_val}/{params.fx_num_phi-1}'][:]
+        xdata2= data['vartheta_R'+'fluxsurfaces_2d_'+ rf'{slider_val}/{params.fx_num_phi-1}'][:]
+        ydata2= data['vartheta_Z'+'fluxsurfaces_2d_'+ rf'{slider_val}/{params.fx_num_phi-1}'][:]
+        phi_curr = xdata1.attrs['phi_curr']
+        xdata1 = xdata1[:] ## Load into memory 
+        fig = pplotting.plotly_plot_fluxsurf(xdata1,ydata1,xdata2,ydata2,phi_curr,params)
+    
+
     return fig
 
 
-def slider_fluxsurf():
-    slider=dcc.Slider(min=0, max = 0, step = None, marks={}, value=0, id='slider_fluxsurf')
+
+
+def slider_fluxsurf(params):
+    max = params.fx_num_phi-1
+    marks={i:'' for i in range(0,params.fx_num_phi)}
+    slider=dcc.Slider(min=0, max = max, step = None, marks=marks, value=0, id='slider_fluxsurf')
     col = dbc.Row([
             dbc.Col([
                 slider
@@ -341,29 +397,37 @@ def slider_fluxsurf():
     ], justify='center')
     return col
 
-def update_slider_fluxsurf(eq_index,params):
-    eq = params.eq_loaded[eq_index]
-    max = params.fx_num_phi-1
-    marks={i:'' for i in range(0,params.fx_num_phi)}
-    return max, marks
+
 
 
 def figure_2d():
     fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_2d', mathjax=True)],
-                            style=borderstyle())
+                            style=pplotting.borderstyle())
     column = dbc.Col(fig_display, 
                     className = 'mb-3')
     return column
 
 def update_figure_2dprofiles(eq_index,view, quantity, slider_val,params):
     if view == 'const_rho':
-        fig = params.pp_eq_loaded[eq_index][quantity+'2d'+'const_rho'][slider_val]
+        with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
+            data= f['/2d/constrho_2d_/' + quantity + 'constrho_2d_' + rf'{slider_val}/{params.surf2d_num_rho}']
+            label = data.attrs['_label_']
+            rho_curr = data.attrs['_rho_curr_']
+            fig = pplotting.plotly_plot_2dsurf_const_rho(data[:], label, rho_curr, params)
     else:
-        fig = params.pp_eq_loaded[eq_index][quantity+'2d'+'const_phi'][slider_val]
+        with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
+            data = f['/2d/constphi_2d_/' + quantity + 'constphi_2d_' + rf'{slider_val}/{params.surf2d_num_phi - 1}']
+            lcfs_data = f['/2d/constphi_2d_LCFS_/constphi_2d_LCFS_' + rf'{slider_val}/{params.surf2d_num_phi - 1}']
+            label=data.attrs['_label_']
+            phi_curr=data.attrs['_phi_curr_']
+            data = data[:]
+            fig =  pplotting.plotly_plot_2dsurf_const_phi(data[0],data[1],data[2], lcfs_data[0], lcfs_data[1], phi_curr, label, params)
+    fig.update_layout(title_x=.5, title_y=.85)
     return fig
 
-def slider_2dprofiles():
-    slider=dcc.Slider(min=0, max = 0, step = None, marks={}, value=0, id='slider_2d')
+
+def slider_2dprofiles(params):
+    slider=dcc.Slider(min=0, max = params.surf2d_num_rho, step = None, marks={}, value=params.surf2d_num_rho, id='slider_2d')
     col = dbc.Row([
             dbc.Col([
                 slider
@@ -371,8 +435,7 @@ def slider_2dprofiles():
     ], justify='center')
     return col
 
-def update_slider_2dprofiles(eq_index,view, params):
-    eq = params.eq_loaded[eq_index]
+def update_slider_2dprofiles(view, params):
     if view == 'const_rho':
         max = params.surf2d_num_rho
         marks = {i: '' for i in range(0,params.surf2d_num_rho+1)}
@@ -426,7 +489,7 @@ def panel_3d_right(params):
 
 def figure_3d():
     fig_row = dbc.Row([
-                dbc.Col(html.Div(children=[dcc.Graph(figure={}, id='fig_3d', mathjax=True)], style=borderstyle()), 
+                dbc.Col(html.Div(children=[dcc.Graph(figure={}, id='fig_3d', mathjax=True)], style=pplotting.borderstyle()), 
                             className = 'mb-3')
             ])
     return fig_row
@@ -447,13 +510,16 @@ def slider_3d(params):
 
 def update_figure_3dprofiles(eq_index, quantity, slider_val, params):
     if quantity == 'magnetic axis':
-        fig = params.pp_eq_loaded[eq_index]['magnetic axis3d']
+        with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
+            curve_data= f['/3d/magaxis_3d_/magaxis_3d_']
+            hovertemplate = curve_data.attrs['hovertemplate']
+            fig=pplotting.plotly_plot_3dmagax(eq_index,curve_data[:], hovertemplate, params)
     else:
-        fig = params.pp_eq_loaded[eq_index][quantity+'3d'][slider_val] 
+        with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
+            color_data = f['/3d/constrho_3d_/' +quantity+"constrho_3d_"+rf"{slider_val+1}/{params.surf3d_num_rho}"]
+            fig=pplotting.plotly_plot_3dsurf(color_data,params.meshes_loaded[slider_val],eq_index,quantity,slider_val+1,params)
     return fig
-
-
-
+    
 
 
 
@@ -468,54 +534,19 @@ def update_figure_3dprofiles(eq_index, quantity, slider_val, params):
 def initialize(params):
     print("initializing")
 
-    visible_files = []
+    visible_files = [] 
     for item in os.listdir(params.base_desc_path):
         if not item.startswith('.'):
             visible_files.append(item)
 
     for item in visible_files:
         desc_path = os.path.join(params.base_desc_path, item)
-        params.eq_names_list.append(item.removesuffix('.h5'))
+        params.eq_names_list.append(item)
         params.eq_loaded.append(desc.io.load(desc_path)) ## loading the equilibrium via DESC
-        params.pp_eq_loaded.append(build_data_dict(item, params)) ## loading the precomputed data
+
+    load_meshes(0,params)
+    load_cached_figures(0,params)
 
 
 
-
-## unpacks the preprocessed files
-def build_data_dict(curr_eq, params): 
-    data_dict = {}
-    path_json = os.path.join(params.pp_desc_path, 'pp_'+curr_eq.removesuffix('.h5')+'.json')
-    with gzip.open(path_json, 'rt') as g:
-        data_collected = json.load(g)
-    
-    params.attrs_dict = data_collected[0]
-    data_array = data_collected[1]
-    figure_list = data_collected[2]
-
-    ######## Loading summary statistics
-    for i in range(0, len(params.attrs_scalars)):
-        data_dict[params.attrs_scalars[i]] = data_array[0][i]
-
-    ######## Loading 1D profiles
-    for i in range(0, len(params.attrs_profiles)):
-        data_dict[params.attrs_profiles[i]] = data_array[1][i]
-
-    ######### Loading flux surface figures, 2dplots, and 3d plots, reconverting to plotly
-    data_dict['flux_surfaces'] = [plotly.io.from_json(fig) for fig in figure_list[0]]
-    for i in range(0,len(params.attrs_2d)):
-        q = params.attrs_2d[i]
-        data_dict[q+'2d'+'const_rho'] = [plotly.io.from_json(fig) for fig in figure_list[i+1]]
-        data_dict[q+'2d'+'const_phi'] = [plotly.io.from_json(fig) for fig in figure_list[i+1+len(params.attrs_2d)]]
-    for i in range(0, len(params.attrs_3d)):
-        q = params.attrs_3d[i]
-        data_dict[q+'3d'] = [plotly.io.from_json(fig) for fig in figure_list[i + 1 + len(params.attrs_2d) + len(params.attrs_2d)]]
-
-    ######## Loading magnetic axis
-    data_dict['magnetic axis3d'] = plotly.io.from_json(figure_list[1+2*len(params.attrs_2d)+len(params.attrs_3d)])
-
-
-    
-
-    return data_dict
 
