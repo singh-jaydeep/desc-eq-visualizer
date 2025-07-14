@@ -4,8 +4,8 @@ from desc.equilibrium.equilibrium import EquilibriaFamily
 import numpy as np
 import pandas as pd
 
-def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params): 
-            ## takes in the R, Z data at constant phi, returns figure
+def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params, xrange=None, yrange=None): 
+    ## takes in the R, Z data at constant phi, returns figure
     fig = go.Figure()
     for i in range(0,params.fx_num_rho):
         fig.add_trace(go.Scatter(x=xdata1[:,i], y= ydata1[:,i], 
@@ -53,7 +53,11 @@ def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params):
             }
         ]
     )
+    if np.any(xrange):
+         fig.update_layout(xaxis=dict(range=xrange))
     
+    if np.any(yrange):
+         fig.update_layout(yaxis=dict(range=yrange))
 
     return plot_theme(fig)
     
@@ -106,7 +110,9 @@ def plotly_plot_2dsurf_const_rho(data, label, rho_curr, params):
 
 
 
-def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outerflux_ydata, phi_curr, label, params):
+def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outerflux_ydata, phi_curr, label, units, params, xrange=None, yrange=None):
+
+
     xtarget = xtarget[0,:]
     ytarget = ytarget[:,0]
 
@@ -117,14 +123,48 @@ def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outer
         mode='lines',
         line=dict(color='black', width=2)
     ))
+    colorbartitle = rf'${label} \ \ ({units})$'
     title=fr'${label} \ \text{{at toroidal angle }} \phi={phi_curr:.3f}\pi$'
     fig.update_layout(
         title={
             'text': title,
             'x': 0.5,
             'y': 0.85,
-        }
+        },
+         xaxis=dict(
+            title=dict(
+                text="R (m)"
+            )
+        )
     )
+    fig.update_layout(
+        annotations=[
+            {
+                'text': 'Z (m)',
+                'xref':"paper",
+                'yref':"paper",
+                'x': -.15,
+                'y': .5,
+                'showarrow': False,
+                'textangle': 0,
+                'xanchor':"left",
+                'yanchor':"bottom",
+                'font': dict(size=14)
+            }
+        ]
+    )
+    fig.add_annotation(
+            text=colorbartitle,
+            showarrow=False,
+            xref="paper", yref="paper",
+            x=1.0, y=1.0,  
+            xanchor="left", yanchor="bottom"
+    )
+    if np.any(xrange):
+         fig.update_layout(xaxis=dict(range=xrange))
+    
+    if np.any(yrange):
+         fig.update_layout(yaxis=dict(range=yrange))
     return plot_theme(fig)
 
 
@@ -231,6 +271,7 @@ def borderstyle():
 
 
 
+
 def compute_3dplot_params(eq_index, params):
     eq = params.eq_loaded[eq_index]
     if isinstance(eq, EquilibriaFamily): ## If an equilibrium family, only take the final entry
@@ -241,8 +282,8 @@ def compute_3dplot_params(eq_index, params):
     
     coord_r = eq.compute('R')['R']
     coord_z = eq.compute('Z')['Z']
-    xyrange = 1.2*np.max(coord_r)
-    zrange = 1.2*np.max(coord_z)
+    xyrange = 1.2*np.max(np.abs(coord_r))
+    zrange = 1.2*np.max(np.abs(coord_z))
     inv_ar = 1/float(eq.compute('R0/a')['R0/a'])
 
     plot_params['scene'] = dict(aspectmode='manual', aspectratio = {'x': 1, 'y':1, 'z': inv_ar},

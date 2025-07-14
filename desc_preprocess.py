@@ -2,6 +2,7 @@ import desc
 import os
 import time 
 import matplotlib.pyplot as plt
+import math
 import numpy as np
 import h5py
 from desc.equilibrium import EquilibriaFamily
@@ -43,6 +44,7 @@ def precompute():
             f = h5py.File(dest_filename, "w")
             
 
+            ## Computing scalars
             gp_scalars = f.create_group("scalars")
             for q in params.attrs_scalars:
                 computed = eq.compute(q)[q]
@@ -52,7 +54,7 @@ def precompute():
                 gp_scalars.attrs[q+'_scalar_'+'_description_'] = params.attrs_dict[q]['description']
 
                 
-
+            ## Computing 1d profiles
             gp_1d = f.create_group("1d")
             grid_profiles = params.grid_profiles
             for q in params.attrs_profiles:
@@ -64,13 +66,51 @@ def precompute():
                 dset_1d.attrs['_description_'] = params.attrs_dict[q]['description']
 
             
+
+            ## Computing 2D flux surfaces and const rho, phi plots
             gp_2d = f.create_group("2d")
+            params.grid_const_rho_args['NFP'] = nfp
+            rho_grid = np.linspace(0,1,params.surf2d_num_rho+1)
+            subgp_2d_constphi_LCFS = gp_2d.create_group("constphi_2d_LCFS_")
+            subgp_2dflux = gp_2d.create_group("fluxsurfaces_2d_")
+            subgp_2d_constrho = gp_2d.create_group("constrho_2d_")
+            subgp_2d_constphi = gp_2d.create_group("constphi_2d_")
+
+            fig,_,data = plot_surfaces(eq, rho=[1.0], phi=params.surf2d_num_phi, return_data=True)
+            plt.close(fig)
+
+            xmax = -1*math.inf ## Useful parameters for plotting
+            ymax = -1*math.inf
+            xmin = math.inf
+            ymin = math.inf
+            for j in range(0,params.surf2d_num_phi):
+                outerflux_xdata = data['rho_R_coords'][:,0,j]
+                outerflux_ydata = data['rho_Z_coords'][:,0,j]
+                data_LCFS = [outerflux_xdata.astype(np.float32), outerflux_ydata.astype(np.float32)]
+                xmax = max( xmax, np.max(data_LCFS[0]))
+                ymax = max( ymax, np.max(data_LCFS[1]))
+                xmin = min( xmin, np.min(data_LCFS[0]))
+                ymin = min( ymin, np.min(data_LCFS[1]))
+
+                dset_2dconstphi_LCFS = subgp_2d_constphi_LCFS.create_dataset("constphi_2d_LCFS_" + rf"{j}/{params.surf2d_num_phi - 1}", data=data_LCFS, compression='gzip')
+                dset_2dconstphi_LCFS.attrs['_phi_curr_'] = round(2/(params.surf2d_num_phi*nfp) * j,3)
+
+
             fig, _, data = plot_surfaces(
                                 eq, rho = params.fx_num_rho, theta = params.fx_num_theta,
                                 phi = params.fx_num_phi, return_data = True
                             )
             plt.close(fig) 
-            subgp_2dflux = gp_2d.create_group("fluxsurfaces_2d_")
+            
+            xdiff = abs(xmax-xmin)
+            ydiff = abs(ymax-ymin)
+            xrange=[xmin-.2 *xdiff,xmax+.2*xdiff]
+            yrange=[ymin-.2* ydiff,ymax+.2*ydiff]
+            subgp_2dflux.attrs['xrange'] = xrange
+            subgp_2dflux.attrs['yrange'] = yrange
+            subgp_2d_constphi.attrs['xrange'] = xrange
+            subgp_2d_constphi.attrs['yrange'] = yrange
+
             for j in range(0,params.fx_num_phi):
                 xdata1 = data['rho_R_coords'][:,:,j]
                 ydata1 = data['rho_Z_coords'][:,:,j]
@@ -94,26 +134,10 @@ def precompute():
                 dset_2dflux_D.attrs['phi_curr'] = np.round(2*j/(params.fx_num_phi*nfp),3)
 
                 if j==0:
-                    fig = pplotting.plotly_plot_fluxsurf(xdata1,ydata1,xdata2,ydata2,0,params)
+                    fig = pplotting.plotly_plot_fluxsurf(xdata1,ydata1,xdata2,ydata2,0,params, xrange=xrange, yrange=yrange)
                     f.create_dataset('cached_fluxsurfaces_2d_', data = plotly.io.to_json(fig))
 
-
-            params.grid_const_rho_args['NFP'] = nfp
-            rho_grid = np.linspace(0,1,params.surf2d_num_rho+1)
-            subgp_2d_constrho = gp_2d.create_group("constrho_2d_")
-            subgp_2d_constphi = gp_2d.create_group("constphi_2d_")
-
-            ## Will want LCFS data for the constant phi plots
-            subgp_2d_constphi_LCFS = gp_2d.create_group("constphi_2d_LCFS_")
-            fig,_,data = plot_surfaces(eq, rho=[1.0], phi=params.surf2d_num_phi, return_data=True)
-            plt.close(fig)
-            for j in range(0,params.surf2d_num_phi):
-                outerflux_xdata = data['rho_R_coords'][:,0,j]
-                outerflux_ydata = data['rho_Z_coords'][:,0,j]
-                data_LCFS = [outerflux_xdata.astype(np.float32), outerflux_ydata.astype(np.float32)]
-                dset_2dconstphi_LCFS = subgp_2d_constphi_LCFS.create_dataset("constphi_2d_LCFS_" + rf"{j}/{params.surf2d_num_phi - 1}", data=data_LCFS, compression='gzip')
-                dset_2dconstphi_LCFS.attrs['_phi_curr_'] = round(2/(params.surf2d_num_phi*nfp) * j,3)
-
+            
 
             ## Now on to main 2D plot data
             for q in params.attrs_2d:
