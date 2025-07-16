@@ -113,7 +113,9 @@ def load_meshes(eq_index,params):
     
 def load_cached_figures(eq_index,params):
     with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
-        params.cached_figures = {'fluxsurfaces_2d_': plotly.io.from_json(f['cached_fluxsurfaces_2d_'][()]),
+        params.cached_figures = {'profile_1d_A':  plotly.io.from_json(f['cached_profile_1d_A'][()]),
+                                 'profile_1d_B':  plotly.io.from_json(f['cached_profile_1d_B'][()]),
+                                'fluxsurfaces_2d_': plotly.io.from_json(f['cached_fluxsurfaces_2d_'][()]),
                                  'constrho_2d_': plotly.io.from_json(f['cached_constrho_2d_'][()]),
                                  'fluxsurfaces_3d_': plotly.io.from_json(f['cached_fluxsurfaces_3d_'][()])
                                   }
@@ -289,25 +291,8 @@ def figure_1dprofiles_right():
 def update_figure_1dprofiles(eq_index,quantity,params):
     with h5py.File(params.pp_desc_path+'/pp_'+params.eq_names_list[eq_index],'r') as f:
         data= f[f'/1d/'+ quantity +'_1d_']
-
-        rho_grid = params.grid_profiles.nodes[:,0]
-        df = pd.DataFrame(dict(
-            x=rho_grid,
-            y=data[:]
-        ))
-        labels = {'x': r'$\rho$', 'y': ''}
-        fig = px.line(df, x='x', y='y', labels=labels)
-        title = fr'$\text{{Radial profile of }} {data.attrs['_label_']}$'
-        fig.update_layout(
-            title={
-                'text': title,
-                'x': 0.5,
-                'y': 0.93,
-            }
-        )
-        fig.update_layout(title_x=.5)
-    return pplotting.plot_theme(fig)
-
+        label = data.attrs['_label_']
+        return pplotting.plotly_plot_1d(data[:],label,params)
 
 
 #################################################

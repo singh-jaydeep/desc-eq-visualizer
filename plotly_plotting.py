@@ -1,8 +1,31 @@
 import plotly.graph_objects as go
+import plotly.express as px
 from desc.plotting import plot_surfaces
 from desc.equilibrium.equilibrium import EquilibriaFamily
 import numpy as np
 import pandas as pd
+
+
+
+def plotly_plot_1d(data, label, params):
+    rho_grid = params.grid_profiles.nodes[:,0]
+    df = pd.DataFrame(dict(
+        x=rho_grid,
+        y=data
+    ))
+    labels = {'x': r'$\rho$', 'y': ''}
+    fig = px.line(df, x='x', y='y', labels=labels)
+    title = fr'$\text{{Radial profile of }} {label}$'
+    fig.update_layout(
+        title={
+            'text': title,
+            'x': 0.5,
+            'y': 0.93,
+        }
+    )
+        
+    return plot_theme(fig)
+     
 
 def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params, xrange=None, yrange=None): 
     ## takes in the R, Z data at constant phi, returns figure

@@ -60,11 +60,16 @@ def precompute():
             for q in params.attrs_profiles:
                 computed = eq.compute(q, grid_profiles)[q]
                 dset_1d = gp_1d.create_dataset(q+"_1d_", data=computed.astype(np.float32), compression='gzip' )
-                #dset_1d.attrs['name'] = q+"1d"
                 dset_1d.attrs['_label_'] = params.attrs_dict[q]['label']
                 dset_1d.attrs['_units_'] = params.attrs_dict[q]['units']
                 dset_1d.attrs['_description_'] = params.attrs_dict[q]['description']
 
+                if q == params.attrs_profiles[0]:
+                    fig = pplotting.plotly_plot_1d(computed[:], params.attrs_dict[q]['label'], params)
+                    f.create_dataset('cached_profile_1d_A', data = plotly.io.to_json(fig))
+                if q == params.attrs_profiles[1]:
+                    fig = pplotting.plotly_plot_1d(computed[:], params.attrs_dict[q]['label'], params)
+                    f.create_dataset('cached_profile_1d_B', data = plotly.io.to_json(fig))
             
 
             ## Computing 2D flux surfaces and const rho, phi plots

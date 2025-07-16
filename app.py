@@ -64,6 +64,8 @@ def load_equilibrium(_,eq_index):
 # a tab after selected
 ###################
 @callback(
+    Output('fig_1dprofiles_left','figure', allow_duplicate=True),
+    Output('fig_1dprofiles_right','figure', allow_duplicate=True),
     Output('figure_fluxsurf', 'figure', allow_duplicate=True),
     Output('figure_2d', 'figure', allow_duplicate=True),
     Output('fig_3d', 'figure', allow_duplicate=True),
@@ -74,26 +76,30 @@ def load_equilibrium(_,eq_index):
     prevent_initial_call=True
 )
 def load_tab(active_tab, _, visited_tabs):
+    return_list = [no_update for i in range(0,5)] + [visited_tabs]
+
     if active_tab in visited_tabs:
-        return no_update, no_update, no_update, visited_tabs
+        return return_list 
     else:
-        visited_tabs.append(active_tab)
+        return_list[-1].append(active_tab)
         if active_tab == 'tab1':
-            return no_update, no_update, no_update, visited_tabs
-        elif active_tab == 'tab2':
-            return no_update, no_update, no_update, visited_tabs
+            pass                      ## Add tab1 specific code if needed
+        if active_tab == 'tab2':
+            return_list[0] = params.cached_figures['profile_1d_A']
+            return_list[0].update_layout(title_x=.5, title_y=.93)
+            return_list[1] = params.cached_figures['profile_1d_B']
+            return_list[1].update_layout(title_x=.5, title_y=.93)
         elif active_tab == 'tab3':
-            figA = params.cached_figures['fluxsurfaces_2d_']
-            figA.update_layout(title_x=.5, title_y=.85)
-            figB = params.cached_figures['constrho_2d_']
-            figB.update_layout(title_x=.5, title_y=.85)
-            return figA, figB, no_update, visited_tabs
+            return_list[2] = params.cached_figures['fluxsurfaces_2d_']
+            return_list[2].update_layout(title_x=.5, title_y=.85)
+            return_list[3] = params.cached_figures['constrho_2d_']
+            return_list[3].update_layout(title_x=.5, title_y=.85)
         elif active_tab == 'tab4':
-            fig = params.cached_figures['fluxsurfaces_3d_']
-            fig.update_layout(title_x=.5, title_y=.9)
-            return no_update, no_update, fig, visited_tabs
-        else:
-            return no_update, no_update, no_update, visited_tabs
+            return_list[4] = params.cached_figures['fluxsurfaces_3d_']
+            return_list[4].update_layout(title_x=.5, title_y=.9)
+       
+        return return_list
+            
         
     
 
