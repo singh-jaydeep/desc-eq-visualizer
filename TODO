@@ -13,11 +13,12 @@
 -- Basics: design
 ##############################
 
+-- The gaps between dropdown and figure are not uniform
 -- Mix of underscores and dashes. Decide on one.
--- Font sizes for plots
+
 -- Plot titles + axes labels
--- Graphs in "Cross sections tab." Replace with a single row element containing the graphs so alignment is automatic.
--- Flux surfaces: find better colors, and more helpful things to show.  Also do you need to show the grid lines? 
+
+
 -- Add units to all labels. 
 
 -- QS tab
@@ -29,11 +30,10 @@
 ##############################
 -- Performance  
 ##############################
--- Add "submit" buttons to allow user to decide. 
--- Add async support so UI remains responsive 
 
 -- See how memory and app loading time behave with more saved equilibria. 
     -- If loading time is a problem, add dropdown with checkmarks for which equilibria the user wants loaded.
+    
 
 
 ##############################

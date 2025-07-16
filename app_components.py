@@ -299,25 +299,12 @@ def update_figure_1dprofiles(eq_index,quantity,params):
 # Tab 3
 #################################################
 def comp_tab3(params):
-    div = html.Div([
-            dbc.Row([
-                panel_2d_left(params),
-                panel_2d_right(params)
-            ], justify='center'
-            )
-        ])
+    div = dbc.Col([panel_2d_row1(params), panel_2d_row2(params)])
     return div
 
-def panel_2d_left(params):
-    col = dbc.Col([
-                    html.Div([figure_fluxsurf(params)], style={'margin-top':'60px'}),
-                    slider_fluxsurf(params)
-                ], width=5
-                )
-    return col
-
-def panel_2d_right(params):
-    selection_row1 = dbc.Col([html.Div(children=[
+def panel_2d_row1(params):
+    col1 = dbc.Col([], width=5)
+    dropdown1 = dbc.Col([html.Div(children=[
                                 html.Div(children='View: '),
                                 dcc.Dropdown(
                                     options={'const_rho': 'Fixed flux surface', 
@@ -326,8 +313,8 @@ def panel_2d_right(params):
                                     value='const_rho',
                                 )
                             ])
-                    ], width=5)
-    selection_row2 = dbc.Col([html.Div(children=[
+                    ], width=2)
+    dropdown2 = dbc.Col([html.Div(children=[
                                     html.Div(children='Quantity: '),
                                     dbc.Col([
                                         dcc.Dropdown(
@@ -337,20 +324,22 @@ def panel_2d_right(params):
                                         )
                                     ])
                                 ])
-                    ], width=5)
-    column = dbc.Col([
-                dbc.Row([selection_row1, selection_row2], justify='center'),
-                figure_2d(),
-                slider_2dprofiles(params)
-            ], className='mb-3', width=5
-            )
-    return column
+                    ], width=2)
+    return dbc.Row([col1, dropdown1, dropdown2] ,  justify='center', className='mt-3 mb-2')
 
-def figure_fluxsurf(params):
+
+def panel_2d_row2(params):
+    col_left = dbc.Col([figure_fluxsurf(), slider_fluxsurf(params)], width=5)
+    col_right = dbc.Col([figure_2d(), slider_2dprofiles(params)], width=5)
+    return dbc.Row([col_left, col_right], justify='center')
+
+
+
+
+def figure_fluxsurf():
     fig_display = html.Div(children=[dcc.Graph(figure={}, id='figure_fluxsurf', mathjax=True)],
                             style=pplotting.borderstyle())
-    column = dbc.Col(fig_display, 
-                    className = 'mb-3')
+    column = dbc.Col(fig_display, className = 'mb-3')
     return column
 
 def update_figure_fluxsurf(eq_index,slider_val, params):
@@ -429,10 +418,12 @@ def update_slider_2dprofiles(view, params):
     if view == 'const_rho':
         max = params.surf2d_num_rho
         marks = {i: '' for i in range(0,params.surf2d_num_rho+1)}
+        value = params.surf2d_num_rho
     else:
         max = params.surf2d_num_phi-1
         marks = {i: '' for i in range(0,params.surf2d_num_phi)}
-    return max, marks, 0
+        value = 0
+    return max, marks, value
 
 
 #################################################

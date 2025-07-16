@@ -13,6 +13,8 @@ from desc.compute import data_index
 from scipy.interpolate import griddata
 import plotly
 
+from matplotlib.path import Path
+
 import plotly_plotting as pplotting
 
 from params import viz_params
@@ -88,17 +90,28 @@ def precompute():
             ymax = -1*math.inf
             xmin = math.inf
             ymin = math.inf
+
+            #data_LCFS_total = [] ## Used for masking operation later
+            mask_LCFS_total = []
             for j in range(0,params.surf2d_num_phi):
                 outerflux_xdata = data['rho_R_coords'][:,0,j]
                 outerflux_ydata = data['rho_Z_coords'][:,0,j]
                 data_LCFS = [outerflux_xdata.astype(np.float32), outerflux_ydata.astype(np.float32)]
+                dset_2dconstphi_LCFS = subgp_2d_constphi_LCFS.create_dataset("constphi_2d_LCFS_" + rf"{j}/{params.surf2d_num_phi - 1}", data=data_LCFS, compression='gzip')
+                dset_2dconstphi_LCFS.attrs['_phi_curr_'] = round(2/(params.surf2d_num_phi*nfp) * j,3)
+
+
+                mask_LCFS_total.append(compute_mask(data_LCFS))
+
+                #data_LCFS_total.append(np.array(data_LCFS))
+
+
                 xmax = max( xmax, np.max(data_LCFS[0]))
                 ymax = max( ymax, np.max(data_LCFS[1]))
                 xmin = min( xmin, np.min(data_LCFS[0]))
                 ymin = min( ymin, np.min(data_LCFS[1]))
 
-                dset_2dconstphi_LCFS = subgp_2d_constphi_LCFS.create_dataset("constphi_2d_LCFS_" + rf"{j}/{params.surf2d_num_phi - 1}", data=data_LCFS, compression='gzip')
-                dset_2dconstphi_LCFS.attrs['_phi_curr_'] = round(2/(params.surf2d_num_phi*nfp) * j,3)
+               
 
 
             fig, _, data = plot_surfaces(
@@ -187,6 +200,9 @@ def precompute():
                     targetX, targetY = np.meshgrid(xtarget, ytarget)
 
                     targetZ = griddata((xdata,ydata), zdata, (targetX, targetY) , method='linear')
+
+                    #targetZ = mask_LCFS(targetZ, [targetX, targetY], data_LCFS_total[j])
+                    targetZ = np.where(mask_LCFS_total[j], targetZ, np.nan)
 
                 
                     data_2d_ = [targetX.astype(np.float32), targetY.astype(np.float32), targetZ.astype(np.float32)]
@@ -291,10 +307,30 @@ def build_attrs_dict(params):
 
 
   
+# def mask_LCFS(data, data_region, data_LCFS):
+#     path = Path(np.array(data_LCFS).T)
+#     points = np.array([data_region[0].flatten(), data_region[1].flatten()]).T
+#     mask = path.contains_points(points).reshape(data_region[0].shape)
+#     data_masked = np.where(mask, data, np.nan)
+#     return data_masked
+    
 
+def compute_mask(data_LCFS):
+    x = data_LCFS[0]
+    y = data_LCFS[1]
 
+    xlow, xhigh = min(x.flatten()), max(x.flatten())
+    ylow, yhigh = min(y.flatten()), max(y.flatten())
 
+    x_rect = np.linspace(xlow, xhigh,100)
+    y_rect = np.linspace(ylow, yhigh,100)
+    targetX, targetY = np.meshgrid(x_rect, y_rect)
 
+    path = Path(np.array(data_LCFS).T)
+    points = np.array([targetX.flatten(), targetY.flatten()]).T
+    mask = path.contains_points(points).reshape(targetX.shape)
+
+    return mask
 
 
 

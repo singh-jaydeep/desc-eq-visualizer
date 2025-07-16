@@ -24,7 +24,8 @@ def plotly_plot_1d(data, label, params):
         }
     )
         
-    return plot_theme(fig)
+    fig = plot_theme(fig, change_grid=1)
+    return fig
      
 
 def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params, xrange=None, yrange=None): 
@@ -34,19 +35,21 @@ def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params, xrang
         fig.add_trace(go.Scatter(x=xdata1[:,i], y= ydata1[:,i], 
                                 mode = 'lines',
                                 line = dict(
-                                    color="#030E4D",
-                                    width=3
+                                    color = '#759eeb',
+                                    width=2
                                 )))
         fig.update_traces(showlegend=False)
     for i in range(0,params.fx_num_theta):
         fig.add_trace(go.Scatter(x=xdata2[:,i], y= ydata2[:,i], 
                                 mode = 'lines',
                                 line = dict(
-                                    color="#000000",
+                                    color="#e65566",
                                     width=2,
                                     dash='dash'
                                 )))
         fig.update_traces(showlegend=False)
+
+
 
     fig.update_layout(
         title={
@@ -55,10 +58,9 @@ def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params, xrang
             'y': 0.85,
         },
         xaxis=dict(
-            title=dict(
-                text="R (m)"
-            )
-        )
+            title=dict(text="R (m)"),
+        ),
+
     )
     fig.update_layout(
         annotations=[
@@ -76,13 +78,17 @@ def plotly_plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params, xrang
             }
         ]
     )
+
+
+    
     if np.any(xrange):
-         fig.update_layout(xaxis=dict(range=xrange))
+          fig.update_layout(xaxis=dict(range=xrange))
     
     if np.any(yrange):
-         fig.update_layout(yaxis=dict(range=yrange))
+          fig.update_layout(yaxis=dict(range=yrange))
 
-    return plot_theme(fig)
+    fig = plot_theme(fig, change_grid=1)
+    return fig
     
 
 
@@ -138,8 +144,8 @@ def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outer
 
     xtarget = xtarget[0,:]
     ytarget = ytarget[:,0]
-
-    fig = go.Figure(go.Heatmap(x=xtarget, y=ytarget, z= ztarget, colorscale='Viridis'))
+    
+    fig = go.Figure(go.Heatmap(x=xtarget, y=ytarget, z= ztarget, zmin = np.nanmin(ztarget), zmax=np.nanmax(ztarget), colorscale='Viridis'))
     fig.add_trace(go.Scatter(
         x = outerflux_xdata,
         y = outerflux_ydata,
@@ -188,6 +194,8 @@ def plotly_plot_2dsurf_const_phi(xtarget,ytarget,ztarget, outerflux_xdata, outer
     
     if np.any(yrange):
          fig.update_layout(yaxis=dict(range=yrange))
+
+    fig = plot_theme(fig, change_grid=1)
     return plot_theme(fig)
 
 
@@ -276,13 +284,21 @@ def plotly_plot_3dsurf(color_data, mesh_data, eq_index, quantity, rho_index, par
 
 
 
-def plot_theme(fig):
+def plot_theme(fig, change_grid = 0):
     fig.update_layout(
         paper_bgcolor='#2c3034',
         plot_bgcolor='#2c3034',
         font_color='white',
         font_family='Times New Roman'
     )
+    if change_grid > 0:
+         fig.update_xaxes(
+            gridcolor='lightgray',
+            gridwidth=.5)
+         fig.update_yaxes(
+            gridcolor='lightgray',
+            gridwidth=.5)
+    
     return fig
 
 def borderstyle():
@@ -320,6 +336,8 @@ def compute_3dplot_params(eq_index, params):
 
 
     return plot_params
+
+
 
 
 
