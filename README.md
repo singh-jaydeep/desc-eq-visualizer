@@ -24,7 +24,10 @@ Clone the repository and set up an appropriate Python environment (eg. using ven
 
 After navigating to the repository in your terminal, you will see `/equilibria` and `/src` folders. In `/equilibria/desc_files`, add the .h5 files from DESC corresponding to your equilibria. Some examples are already included. 
 
-Next, nagivate to `/src/constants.py`. There will be a list of the quantities which are precomputed, using notation from DESC's [documentation](https://desc-docs.readthedocs.io/en/latest/variables.html). The list can be modified as desired. 
+
+
+### Optional
+Nagivate to `/src/constants.py`. There will be a list of the quantities which are precomputed, using notation from DESC's [documentation](https://desc-docs.readthedocs.io/en/latest/variables.html). The list can be modified as desired. 
 
 In the same file will be variables `base_desc_path` and `pp_desc_path`. These are the paths where the code looks for the .h5 files from DESC, and the preprocessed files, respectively. 
 
