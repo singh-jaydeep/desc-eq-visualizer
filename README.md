@@ -67,13 +67,17 @@ Navigating to this address in a browser should show the app.
 # Gallery
 App running on the W7-X equilibrium, taken from the DESC repo [here](https://github.com/PlasmaControl/DESC/tree/master/desc/examples).
 
-<a href="url"><img src="src/gallery/tab1.png" align = "left" height="275" ></a> 
+<a href="url"><img src="src/gallery/tab1.png" height="275" ></a> 
+
+<br>
 
 <a href="url"><img src="src/gallery/tab2.png" height="275" ></a>
 
 <br>
 
-<a href="url"><img src="src/gallery/tab3.png" align = "left" height="275" ></a> 
+<a href="url"><img src="src/gallery/tab3.png" height="275" ></a> 
+
+<br>
 
 <a href="url"><img src="src/gallery/tab4.png" height="275" ></a>
 
