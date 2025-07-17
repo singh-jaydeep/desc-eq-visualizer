@@ -53,12 +53,16 @@ The Dash app is now quite simple to run, using
 
 `python app.py`
 
-The terminal will output "initializing," and list the port from which the app is running. For example, the default is `http://127.0.0.1:8050/`. Navigating to this address in a browser should show the app.
+The terminal will output "initializing," and list the port from which the app is running. For example, the default is 
+
+`http://127.0.0.1:8050/`
+
+Navigating to this address in a browser should show the app.
 
 
 
-# Examples
-See ??
+# Gallery
+
 
 
 
