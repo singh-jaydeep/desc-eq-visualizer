@@ -8,58 +8,11 @@ import dash_bootstrap_components as dbc
 from plotting.plot_utils import borderstyle
 from plotting.plot_building import plot_fluxsurf, plot_2dsurf_const_rho, plot_2dsurf_const_phi
 
-# def comp_tab(params):
-#     div = html.Div([
-#             dbc.Row([
-#                 panel_2d_left(params),
-#                 panel_2d_right(params)
-#             ], justify='center'
-#             )
-#         ])
-#     return div
-
 def comp_tab(params):
     div = dbc.Col([panel_2d_row1(params), panel_2d_row2(params)])
     return div
 
 
-# def panel_2d_left(params):
-#     col = dbc.Col([
-#                     html.Div([figure_fluxsurf(params)], style={'margin-top':'60px'}),
-#                     slider_fluxsurf(params)
-#                 ], width=5
-#                 )
-#     return col
-
-# def panel_2d_right(params):
-#     selection_row1 = dbc.Col([html.Div(children=[
-#                                 html.Div(children='View: '),
-#                                 dcc.Dropdown(
-#                                     options={'const_rho': 'Fixed flux surface', 
-#                                             'const_phi': 'Fixed toroidal angle'},
-#                                     id='dropdown_2d_whichview',
-#                                     value='const_rho',
-#                                 )
-#                             ])
-#                     ], width=5)
-#     selection_row2 = dbc.Col([html.Div(children=[
-#                                     html.Div(children='Quantity: '),
-#                                     dbc.Col([
-#                                         dcc.Dropdown(
-#                                             options={i: i for i in params.attrs_2d},
-#                                             id='dropdown_2dprofiles_list',
-#                                             value=params.attrs_2d[0]
-#                                         )
-#                                     ])
-#                                 ])
-#                     ], width=5)
-#     column = dbc.Col([
-#                 dbc.Row([selection_row1, selection_row2], justify='center'),
-#                 figure_2d(),
-#                 slider_2dprofiles(params)
-#             ], className='mb-3', width=5
-#             )
-#     return column
 
 def panel_2d_row1(params):
     col1 = dbc.Col([], width=5)
