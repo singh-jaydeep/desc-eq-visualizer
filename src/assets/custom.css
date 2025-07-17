@@ -1,13 +1,13 @@
 /* Outer control area */
 .Select-control {
-    background-color: #343a40 !important;
-    color: white !important;
-    border: 1px solid #495057 !important;
+    background-color: #343a40;
+    color: white;
+    border: 1px solid #495057;
 }
 
 /* Selected value text */
 .Select-value-label {
-    color: white !important;
+    color: white;
 }
 
 /* Placeholder text */
@@ -17,20 +17,20 @@
 
 /* Dropdown menu */
 .VirtualizedSelectOption {
-    background-color: #343a40 !important;
-    color: white !important;
+    background-color: #343a40;
+    color: white;
 }
 
 /* Highlighted (hovered) option */
 .VirtualizedSelectFocusedOption {
-    background-color: #495057 !important;
-    color: white !important;
+    background-color: #495057;
+    color: white;
 }
 
 /* Dropdown menu container */
 .Select-menu-outer {
-    background-color: #343a40 !important;
-    border: 1px solid #495057 !important;
+    background-color: #343a40;
+    border: 1px solid #495057;
 }
 
 
@@ -38,8 +38,8 @@
 
 
 .dash-table-tooltip {
-    background-color: #343a40 !important;   /* Dark background */
-    color: white !important;              /* Light text */
+    background-color: #343a40;   /* Dark background */
+    color: white;              /* Light text */
     font-size: 13px;
     white-space: normal;                    /* Allows wrapping */
     text-align: left;
@@ -48,8 +48,3 @@
     border: none;
 }
 
-/*    font-size: 13px;
-    font-family: 'Times New Roman'; 
-    padding: 5px; 
-    max-width: 50px;
-        border: 0px solid #495057;              /* Optional border */
