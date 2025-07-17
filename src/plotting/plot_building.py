@@ -27,7 +27,7 @@ def plot_1d(data, label, params):
             'y': 0.93,
         }
     )
-    fig = pu.plot_theme(fig)   
+    fig = pu.plot_theme(fig, change_grid=1)   
     return fig
      
 
@@ -39,8 +39,8 @@ def plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params, xrange=None,
                                  y= ydata1[:,i], 
                                  mode = 'lines',
                                  line = dict(
-                                            color="#030E4D",
-                                            width=3
+                                            color='#759eeb',
+                                            width=2
                                         )
                                 ))
         fig.update_traces(showlegend=False)
@@ -50,7 +50,7 @@ def plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params, xrange=None,
                                  y= ydata2[:,i], 
                                  mode = 'lines',
                                  line = dict(
-                                            color="#000000",
+                                            color="#e65566",
                                             width=2,
                                             dash='dash'
                                         )
@@ -91,7 +91,7 @@ def plot_fluxsurf(xdata1, ydata1, xdata2, ydata2, phi_curr, params, xrange=None,
     if np.any(yrange):
          fig.update_layout(yaxis=dict(range=yrange))
 
-    fig = pu.plot_theme(fig)
+    fig = pu.plot_theme(fig, change_grid=1)
 
     return fig
     

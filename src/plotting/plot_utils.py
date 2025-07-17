@@ -7,13 +7,20 @@
 from desc.equilibrium.equilibrium import EquilibriaFamily
 import numpy as np
 
-def plot_theme(fig):
+def plot_theme(fig, change_grid = 0):
     fig.update_layout(
         paper_bgcolor='#2c3034',
         plot_bgcolor='#2c3034',
         font_color='white',
         font_family='Times New Roman'
     )
+    if change_grid > 0:
+         fig.update_xaxes(
+            gridcolor='lightgray',
+            gridwidth=.5)
+         fig.update_yaxes(
+            gridcolor='lightgray',
+            gridwidth=.5)
     return fig
 
 
