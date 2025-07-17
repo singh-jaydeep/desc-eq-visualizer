@@ -1,0 +1,50 @@
+/* Outer control area */
+.Select-control {
+    background-color: #343a40;
+    color: white;
+    border: 1px solid #495057;
+}
+
+/* Selected value text */
+.Select-value-label {
+    color: white;
+}
+
+/* Placeholder text */
+.Select-placeholder {
+    color: #adb5bd !important;
+}
+
+/* Dropdown menu */
+.VirtualizedSelectOption {
+    background-color: #343a40;
+    color: white;
+}
+
+/* Highlighted (hovered) option */
+.VirtualizedSelectFocusedOption {
+    background-color: #495057;
+    color: white;
+}
+
+/* Dropdown menu container */
+.Select-menu-outer {
+    background-color: #343a40;
+    border: 1px solid #495057;
+}
+
+
+
+
+
+.dash-table-tooltip {
+    background-color: #343a40;   /* Dark background */
+    color: white;              /* Light text */
+    font-size: 13px;
+    white-space: normal;                    /* Allows wrapping */
+    text-align: left;
+    z-index: 1000;
+    box-shadow: none;
+    border: none;
+}
+
