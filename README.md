@@ -65,7 +65,9 @@ Navigating to this address in a browser should show the app.
 
 
 # Gallery
+App running on the W7-X equilibrium, taken from the DESC repo [here](https://github.com/PlasmaControl/DESC/tree/master/desc/examples).
 
+![Tab 1: Overview](tab1.png)
 
 
 
