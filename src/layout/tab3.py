@@ -129,7 +129,9 @@ def update_slider_2dprofiles(view, params):
     if view == 'const_rho':
         max = params.surf2d_num_rho
         marks = {i: '' for i in range(0,params.surf2d_num_rho+1)}
+        value = params.surf2d_num_rho
     else:
         max = params.surf2d_num_phi-1
         marks = {i: '' for i in range(0,params.surf2d_num_phi)}
-    return max, marks, 0
+        value = 0
+    return max, marks, value
