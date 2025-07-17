@@ -1,46 +1,27 @@
 ##############################
--- Basics: functionality
+-- Basics: functionality/design
 ##############################
 -- Fill out the quantities which can be plotted in params.py (*Low Priority*)
 -- Add magnetic field lines on 2D const. rho plots
 -- On 2D const rho plots, add option to see density heatmap vs contours. Or add contours to the heatmap? 
-
--- For the flux surfaces, make the grid lines constant as slider varies. 
--- Why is iota (and q) negative?
-
-
-##############################
--- Basics: design
-##############################
-
--- The gaps between dropdown and figure are not uniform
--- Mix of underscores and dashes. Decide on one.
-
--- Plot titles + axes labels
-
-
--- Add units to all labels. 
-
+-- (Why is iota (and q) negative for some equilibria?)
 -- QS tab
-
--- Replace global params object with a dcc.Store 
+-- Make gaps between div elements uniform
+-- Plot titles + axes labels
+-- Add units to all labels. 
     
-
 
 ##############################
 -- Performance  
 ##############################
-
 -- See how memory and app loading time behave with more saved equilibria. 
     -- If loading time is a problem, add dropdown with checkmarks for which equilibria the user wants loaded.
     
 
-
 ##############################
 -- Overall program logic/design
 ##############################
-
--- The preprocess script is unwieldly 
+-- Replace global params object with a dcc.Store 
 
 
 ##############################
