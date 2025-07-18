@@ -14,6 +14,9 @@ Key features:
 - At runtime, loads computed quantities into a browser Dash app. User can select different quantities to plot, and cycle through equilibria
 
 
+
+
+
 # Instructions 
 
 ## Step 1. Setup
@@ -82,7 +85,11 @@ App running on the W7-X equilibrium, taken from the DESC repo [here](https://git
 <a href="url"><img src="src/gallery/tab4.png" height="275" ></a>
 
 
-
+# Dependencies
+We rely on the open source projects
+- [DESC](https://github.com/PlasmaControl/DESC) (MIT License)
+- [Dash](https://github.com/plotly/dash) (MIT License)
+- [Plotly](https://github.com/plotly/plotly.py) (MIT License)
 
 
 
