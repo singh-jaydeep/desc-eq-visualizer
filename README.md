@@ -85,8 +85,8 @@ App running on the W7-X equilibrium, taken from the DESC repo [here](https://git
 <a href="url"><img src="src/gallery/tab4.png" height="275" ></a>
 
 
-# Dependencies
-This repository uses the following open source projects: 
+# Key Dependencies
+This repository relies heavily on the following open source projects:
 - [DESC](https://github.com/PlasmaControl/DESC) (MIT License)
 - [Dash](https://github.com/plotly/dash) (MIT License)
 - [Dash Bootstrap Components](https://github.com/dbc-team/dash-bootstrap-components) (Apache-2.0 License)
