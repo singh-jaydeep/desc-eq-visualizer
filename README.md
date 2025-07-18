@@ -20,7 +20,7 @@ Key features:
 
 Clone the repository and set up an appropriate Python environment (eg. using venv). Install the modules `desc-opt` and `dash`. Using pip, one can just run 
 
-`pip install desc-opt, dash`
+`pip install desc-opt dash`
 
 After navigating to the repository in your terminal, you will see `/equilibria` and `/src` folders. In `/equilibria/desc_files`, add the .h5 files from DESC corresponding to your equilibria. Some examples are already included. 
 
