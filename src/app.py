@@ -1,3 +1,12 @@
+#################################################
+# Main file which is passed into Dash. Contains
+# the layout of elements, as well as the 'callbacks'
+# which are triggered when the user interacts with 
+# the app. The individual figures, dropdowns, sliders,
+# etc. are defined in /layout.
+#################################################
+
+
 from dash import Dash, html, dcc, callback, Output, Input, State, no_update
 import dash_bootstrap_components as dbc
 
