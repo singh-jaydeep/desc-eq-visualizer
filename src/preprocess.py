@@ -21,6 +21,18 @@ import constants as c
 import file_io
 
 
+#################################################
+# Reads in files in equilibria/desc_files. For
+# any 'X.h5' without a corresponding 'pp_X.h5'
+# file in equilbria/preprocessed, the script 
+# calls DESC's API to compute all the necessary 
+# quantities. Also caches some figures. Writes
+# the corresponding 'pp_X.h5' file. Note these files 
+# can be fairly large, depending on the complexity 
+# of the equilibrium, the number of quantities in 
+# constants.py, and the number of toroidal/poloidal
+# slices requested.
+#################################################
 def preprocess():
     params = Params()
 
