@@ -5,7 +5,7 @@ An interactive application for visualizing three dimensional, toroidal magnetic 
 Key features:
 - Accepts 'X.h5' files storing Equilibrium or EquilibriumFamily objects from DESC
 - Uses DESC's API to compute and store quantities of interest:
-    - scalar figures of merit ($\beta$, MHD force error, ...)
+    - scalar figures of merit (avg. $\beta$, avg. MHD force error, ...)
     - functions of the flux surface label (pressure, rotational transform, ...)
     - 2D flux surfaces on fixed toroidal slices
     - 2D heatmaps of functions on fixed flux surface or on fixed toroidal slice (current and magnetic field densities, ... )
