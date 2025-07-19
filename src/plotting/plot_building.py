@@ -1,3 +1,10 @@
+#################################################
+# Since Dash relies on plotly, we have different 
+# functions which accept the data from DESC, and 
+# produce the required plotly plots. Also ensures 
+# uniform style.
+#################################################
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
