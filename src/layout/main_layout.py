@@ -1,3 +1,7 @@
+#################################################
+# Defines the app's key components
+#################################################
+
 from dash import html, dcc, callback
 import dash_bootstrap_components as dbc
 from desc.compute import data_index
