@@ -3,6 +3,14 @@ from desc.grid import LinearGrid
 import constants as c
 
 
+#################################################
+# Dataclass storing all the parameters which are
+# needed by the preprocessing script and the Dash
+# app. Includes grids used by DESC's compute API,
+# along with lists of all quantities to be computed.
+# Also stores a few cached figures and meshes to 
+# speed up the Dash app.
+#################################################
 @dataclass
 class Params:
 
