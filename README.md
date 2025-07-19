@@ -8,9 +8,9 @@ Key features:
     - scalar figures of merit ($\beta$, MHD force error, ...)
     - functions of the flux surface label (pressure, rotational transform, ...)
     - 2D flux surfaces on fixed toroidal slices
-    - 2D heatmaps of functions on fixed flux surface, and fixed toroidal slice (current and magnetic field densities, ... )
-    - 3D flux surfaces, and magnetic axis
-    - 3D heatmaps of functions on fixed flux surface(current and magnetic field densities, ... )
+    - 2D heatmaps of functions on fixed flux surface or on fixed toroidal slice (current and magnetic field densities, ... )
+    - 3D flux surfaces, and the magnetic axis
+    - 3D heatmaps of functions on fixed flux surface (current and magnetic field densities, ... )
 - At runtime, loads computed quantities into a browser Dash app. User can select different quantities to plot, and cycle through equilibria
 
 
