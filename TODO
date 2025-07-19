@@ -1,7 +1,8 @@
 ##############################
 -- Basics: functionality/design
 ##############################
--- Fill out the quantities which can be plotted in params.py (*Low Priority*)
+-- Comment code! (*high priority*)
+-- Add to the quantities which can be plotted in params_class.py 
 -- Add magnetic field lines on 2D const. rho plots
 -- On 2D const rho plots, add option to see density heatmap vs contours. Or add contours to the heatmap? 
 -- (Why is iota (and q) negative for some equilibria?)
