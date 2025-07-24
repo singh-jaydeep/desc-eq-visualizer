@@ -320,7 +320,7 @@ def compute_3dmagneticaxis(eq, gp, params):
         hovertemplate += (
             params.attrs_mag_axis[j] + ": %{" + f"customdata[{3+j}]" + ":.3f}" + "<br>"
         )
-        hovertemplate += "<extra></extra>"
+    hovertemplate += "<extra></extra>"
     dset_3d_magaxis = subgp_3d_magaxis.create_dataset(
         "magaxis_3d_", data=curve_data, compression="gzip"
     )
